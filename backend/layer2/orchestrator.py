@@ -96,6 +96,27 @@ FILLER_TEMPLATES = {
     ],
 }
 
+# Casual conversation patterns (not domain queries, but still in-scope interaction)
+CONVERSATION_PATTERNS = [
+    r"\b(how are you|how're you|how do you do|how have you been)\b",
+    r"\b(what's up|whats up|sup)\b",
+    r"\b(thank you|thanks|thank|appreciate)\b",
+    r"\b(what can you do|what do you do|what are you|who are you|what's your name|whats your name)\b",
+    r"\b(help me|can you help)\b",
+    r"\b(you're welcome|no problem|never mind|nevermind|forget it)\b",
+    r"\b(bye|goodbye|good night|see you|take care)\b",
+    r"\b(nice|awesome|great|cool|ok|okay|got it|understood|sure)\b",
+    r"\b(tell me a joke|are you a robot|are you real|are you ai)\b",
+]
+
+OUT_OF_SCOPE_MESSAGE = (
+    "That's outside what I can help with. "
+    "I'm your industrial operations assistant — I can help with "
+    "equipment monitoring, alerts, maintenance, supply chain, "
+    "workforce management, and task tracking. "
+    "What would you like to know?"
+)
+
 # Response templates for different intents
 RESPONSE_TEMPLATES = {
     "status_query": "Based on the latest data, {summary}",
@@ -171,6 +192,34 @@ class Layer2Orchestrator:
         # 2A: Parse intent
         intent = self._parse_intent(transcript)
 
+        # Short-circuit: out-of-scope and conversation skip RAG entirely
+        if intent.type == "out_of_scope":
+            processing_time = int((time.time() - start_time) * 1000)
+            logger.info(f"Out-of-scope query: '{transcript[:80]}' — returning scope message")
+            return OrchestratorResponse(
+                voice_response=OUT_OF_SCOPE_MESSAGE,
+                layout_json={"widgets": [], "transitions": {}},
+                context_update=self._update_context(intent, []),
+                intent=intent,
+                rag_results=[],
+                processing_time_ms=processing_time,
+                filler_text="",
+            )
+
+        if intent.type == "conversation":
+            voice_response = self._generate_conversation_response(intent)
+            processing_time = int((time.time() - start_time) * 1000)
+            logger.info(f"Conversation: '{transcript[:80]}' → '{voice_response[:80]}'")
+            return OrchestratorResponse(
+                voice_response=voice_response,
+                layout_json={"widgets": [], "transitions": {}},
+                context_update=self._update_context(intent, []),
+                intent=intent,
+                rag_results=[],
+                processing_time_ms=processing_time,
+                filler_text="",
+            )
+
         # Generate filler based on intent
         filler = self._generate_filler(intent)
 
@@ -211,8 +260,19 @@ class Layer2Orchestrator:
         # Extract entities
         entities = self._extract_entities(text_lower)
 
+        # Scope guard: if no domain matched and not a greeting,
+        # classify as conversation or out_of_scope
+        if intent_type != "greeting" and not domains:
+            if self._is_conversation(text_lower):
+                intent_type = "conversation"
+            else:
+                intent_type = "out_of_scope"
+
         # Calculate confidence based on matches
-        confidence = min(1.0, len(domains) * 0.3 + (0.4 if entities else 0.2))
+        if intent_type in ("out_of_scope", "conversation"):
+            confidence = 0.9
+        else:
+            confidence = min(1.0, len(domains) * 0.3 + (0.4 if entities else 0.2))
 
         return Intent(
             type=intent_type,
@@ -221,6 +281,13 @@ class Layer2Orchestrator:
             confidence=confidence,
             raw_text=transcript,
         )
+
+    def _is_conversation(self, text: str) -> bool:
+        """Check if text matches casual conversation patterns."""
+        for pattern in CONVERSATION_PATTERNS:
+            if re.search(pattern, text):
+                return True
+        return False
 
     def _detect_intent_type(self, text: str) -> str:
         """Detect the type of user intent."""
@@ -240,18 +307,19 @@ class Layer2Orchestrator:
             r"\b(hello|hi|hey|good morning|good afternoon|good evening)\b",
         ]
 
-        # Check patterns
-        for pattern in greeting_patterns:
-            if re.search(pattern, text):
-                return "greeting"
+        # Check patterns — order matters.
+        # If text matches both greeting AND query/action, prefer query/action
+        # (e.g. "Hello, show me transformer status" is a query, not a greeting).
+        is_greeting = any(re.search(p, text) for p in greeting_patterns)
+        is_action = any(re.search(p, text) for p in action_patterns)
+        is_query = any(re.search(p, text) for p in query_patterns)
 
-        for pattern in action_patterns:
-            if re.search(pattern, text):
-                return "action"
-
-        for pattern in query_patterns:
-            if re.search(pattern, text):
-                return "query"
+        if is_action:
+            return "action"
+        if is_query:
+            return "query"
+        if is_greeting:
+            return "greeting"
 
         return "query"  # Default to query
 
@@ -266,10 +334,8 @@ class Layer2Orchestrator:
                         detected.append(domain)
                     break
 
-        # Default to industrial if no domain detected
-        if not detected:
-            detected = ["industrial"]
-
+        # Return empty list when no domain keywords match.
+        # _parse_intent() uses empty domains to classify as conversation or out_of_scope.
         return detected
 
     def _extract_entities(self, text: str) -> dict:
@@ -300,6 +366,10 @@ class Layer2Orchestrator:
         if intent.type == "greeting":
             fillers = FILLER_TEMPLATES["greeting"]
             return random.choice(fillers)
+
+        # No filler needed for instant responses
+        if intent.type in ("out_of_scope", "conversation"):
+            return ""
 
         if "alerts" in intent.domains:
             fillers = FILLER_TEMPLATES["checking"]
@@ -577,6 +647,37 @@ class Layer2Orchestrator:
 
         # Add proactive question
         return f"{greeting} How can I help you with operations today?"
+
+    def _generate_conversation_response(self, intent: Intent) -> str:
+        """Generate a natural response for casual conversation (no RAG needed)."""
+        text = intent.raw_text.lower()
+
+        if re.search(r"\b(thank|thanks|appreciate)\b", text):
+            return "You're welcome! Let me know if you need anything else about operations."
+
+        if re.search(r"\b(how are you|how're you|how do you do|how have you been)\b", text):
+            return "I'm running well, thank you! How can I help with operations today?"
+
+        if re.search(r"\b(what can you do|what do you do|help me|can you help)\b", text):
+            return (
+                "I can help you with equipment monitoring, alert management, "
+                "maintenance tracking, supply chain status, workforce management, "
+                "and task tracking. Just ask me anything about your operations!"
+            )
+
+        if re.search(r"\b(who are you|what are you|your name|are you a robot|are you ai|are you real)\b", text):
+            return "I'm your Command Center operations assistant. I help monitor and manage industrial operations."
+
+        if re.search(r"\b(bye|goodbye|good night|see you|take care)\b", text):
+            return "Talk to you later! I'll be here if you need anything."
+
+        if re.search(r"\b(ok|okay|got it|understood|sure|nice|awesome|great|cool)\b", text):
+            return "Sounds good. Let me know if you need anything."
+
+        if re.search(r"\b(never mind|nevermind|forget it|no problem|you're welcome)\b", text):
+            return "No worries. I'm here whenever you need me."
+
+        return "I'm here to help with operations. What would you like to know?"
 
     def _generate_layout(self, intent: Intent, rag_results: list) -> dict:
         """
