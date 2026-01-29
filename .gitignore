@@ -1,7 +1,5 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
 # dependencies
-/node_modules
+node_modules/
 /.pnp
 .pnp.js
 .yarn/install-state.gz
@@ -10,7 +8,7 @@
 /coverage
 
 # next.js
-/.next/
+.next/
 /out/
 
 # production
@@ -34,3 +32,26 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+backend/venv/
+backend/.venv/
+backend/db.sqlite3
+
+# dev server logs
+scripts/dev-helpers/logs/
+
+# RAG vector database
+backend/chroma_db/
+
+# PersonaPlex virtual environment
+personaplex/venv/
+personaplex/.venv/
+
+# Stale directories - do not recreate
+/layer1/
+/backend/.next/
+/personaplex/client/
