@@ -5,7 +5,8 @@ After=network.target
 [Service]
 Type=simple
 ExecStartPre=-/usr/bin/docker rm -f kokoro-tts
-ExecStart=/usr/bin/docker run --name kokoro-tts --rm --gpus all -p 8880:8880 ghcr.io/remsky/kokoro-fastapi-gpu:latest
+# GPU variant (requires nvidia-container-toolkit): --gpus all ghcr.io/remsky/kokoro-fastapi-gpu:latest
+ExecStart=/usr/bin/docker run --name kokoro-tts --rm -p 8880:8880 ghcr.io/remsky/kokoro-fastapi-cpu:latest
 ExecStop=/usr/bin/docker stop kokoro-tts
 Restart=always
 RestartSec=10

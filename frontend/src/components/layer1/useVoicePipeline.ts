@@ -57,7 +57,7 @@ interface UseVoicePipelineReturn {
   switchTTSEngine: (engine: TTSEngine) => void;
   isSTTServerAvailable: boolean;
   isTTSServerAvailable: boolean;
-  sttAvailableModels: { name: string; loaded: boolean; available: boolean; description: string }[];
+  sttAvailableModels: { name: string; loaded: boolean; available: boolean; description: string; runtime_broken?: boolean }[];
 
   // Layer 2 state
   layer2Status: "off" | "checking" | "ready" | "processing" | "error";
