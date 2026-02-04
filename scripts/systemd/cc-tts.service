@@ -1,0 +1,21 @@
+[Unit]
+Description=CommandCenter TTS (Kokoro Native GPU)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/rohith/desktop/CommandCenter/backend/tts/Kokoro-FastAPI
+Environment=USE_GPU=true
+Environment=USE_ONNX=false
+Environment=PYTHONPATH=/home/rohith/desktop/CommandCenter/backend/tts/Kokoro-FastAPI/api
+Environment=MODEL_DIR=src/models
+Environment=VOICES_DIR=src/voices/v1_0
+Environment=WEB_PLAYER_PATH=/home/rohith/desktop/CommandCenter/backend/tts/Kokoro-FastAPI/web
+ExecStart=/home/rohith/desktop/CommandCenter/backend/tts/venv/bin/uvicorn api.src.main:app --host 0.0.0.0 --port 8880
+Restart=always
+RestartSec=10
+StandardOutput=append:/home/rohith/desktop/CommandCenter/logs/tts.log
+StandardError=append:/home/rohith/desktop/CommandCenter/logs/tts.log
+
+[Install]
+WantedBy=default.target
