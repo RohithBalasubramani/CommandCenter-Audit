@@ -83,6 +83,9 @@ export interface ProactiveTrigger {
 
 const API_BASE = config.api.baseUrl;
 
+/** Performance budget: max round-trip time for AI orchestration (blueprint spec) */
+const BUDGET_ROUND_TRIP_MS = 45_000;
+
 /**
  * Send transcript to Layer 2 for processing.
  *
@@ -97,19 +100,39 @@ export async function orchestrate(
   console.info(`[Layer2] orchestrate() → POST ${url}`, { transcript, sessionId });
   const t0 = performance.now();
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      transcript,
-      session_id: sessionId,
-      context: context || {},
-    }),
-  });
+  // Performance budget: abort if round-trip exceeds 45s
+  const controller = new AbortController();
+  const budgetTimer = setTimeout(() => controller.abort(), BUDGET_ROUND_TRIP_MS);
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        transcript,
+        session_id: sessionId,
+        context: context || {},
+      }),
+      signal: controller.signal,
+    });
+  } catch (err: unknown) {
+    clearTimeout(budgetTimer);
+    if (err instanceof DOMException && err.name === "AbortError") {
+      const elapsed = Math.round(performance.now() - t0);
+      console.error(`[Layer2] orchestrate() BUDGET TIMEOUT after ${elapsed}ms (limit: ${BUDGET_ROUND_TRIP_MS}ms)`);
+      throw new Error(`AI round-trip exceeded ${BUDGET_ROUND_TRIP_MS / 1000}s budget`);
+    }
+    throw err;
+  }
+  clearTimeout(budgetTimer);
 
   const elapsed = Math.round(performance.now() - t0);
+  if (elapsed > BUDGET_ROUND_TRIP_MS * 0.8) {
+    console.warn(`[Layer2] orchestrate() near budget limit: ${elapsed}ms / ${BUDGET_ROUND_TRIP_MS}ms`);
+  }
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));

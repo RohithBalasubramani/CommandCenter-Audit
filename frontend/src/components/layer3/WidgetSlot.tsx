@@ -3,6 +3,7 @@
 import React, { Suspense, Component, ReactNode } from "react";
 import type { WidgetSize } from "@/types";
 import WidgetToolbar from "./WidgetToolbar";
+import { WidgetLifecycleProvider } from "./WidgetLifecycleContext";
 
 // --- Error Boundary ---
 
@@ -93,6 +94,8 @@ interface WidgetSlotProps {
   onSnapshot?: () => void;
   /** Drill-down callback — clicking widget body sends contextual query to AI. */
   onDrillDown?: (context: string) => void;
+  /** When true, shows a visual "Demo Data" indicator on the widget. */
+  isDemo?: boolean;
 }
 
 export default function WidgetSlot({
@@ -112,6 +115,7 @@ export default function WidgetSlot({
   onUnfocus,
   onSnapshot,
   onDrillDown,
+  isDemo = false,
 }: WidgetSlotProps) {
   if (size === "hidden") return null;
 
@@ -124,6 +128,12 @@ export default function WidgetSlot({
 
   const inner = (
     <div className="relative h-full w-full group rounded-xl border border-neutral-700/50 bg-neutral-900/80 backdrop-blur-sm shadow-lg overflow-hidden hover:border-neutral-600/50 transition-colors duration-200 flex flex-col">
+      {/* Demo data badge — always visible when data is stub/demo */}
+      {isDemo && (
+        <div className="absolute top-2 right-2 z-20 rounded bg-amber-600/90 px-1.5 py-0.5 pointer-events-none" data-testid="demo-badge">
+          <span className="text-[9px] font-bold uppercase tracking-wider text-white">Demo Data</span>
+        </div>
+      )}
       {/* Title label — top-left, appears on hover */}
       {title && (
         <div className="absolute top-2 left-2 z-10 rounded-lg bg-neutral-800/80 backdrop-blur-sm border border-neutral-700/50 px-2 py-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none max-w-[60%] truncate">
@@ -151,7 +161,9 @@ export default function WidgetSlot({
       >
         <WidgetErrorBoundary scenario={scenario}>
           <Suspense fallback={<WidgetSkeleton />}>
-            {children}
+            <WidgetLifecycleProvider>
+              {children}
+            </WidgetLifecycleProvider>
           </Suspense>
         </WidgetErrorBoundary>
       </div>

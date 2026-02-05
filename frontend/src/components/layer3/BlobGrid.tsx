@@ -29,7 +29,7 @@ export default function BlobGrid({ children, heading }: BlobGridProps) {
 
       {/* Grid — fills remaining space, allow scroll for dense content */}
       <div className="flex-1 min-h-0 p-4 overflow-y-auto">
-        <div className="grid grid-cols-12 gap-2 min-h-full" style={{ gridAutoRows: 'minmax(100px, auto)', gridAutoFlow: 'dense', alignContent: 'start' }}>
+        <div className="grid grid-cols-1 md:grid-cols-6 xl:grid-cols-12 gap-2 min-h-full" style={{ gridAutoRows: 'minmax(100px, auto)', gridAutoFlow: 'dense', alignContent: 'start' }}>
           {children}
         </div>
       </div>

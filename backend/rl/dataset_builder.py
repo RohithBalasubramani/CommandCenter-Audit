@@ -26,7 +26,7 @@ def get_all_scenarios() -> list[str]:
         import sys
         sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
         from layer2.widget_catalog import WIDGET_CATALOG
-        return sorted(WIDGET_CATALOG.keys())
+        return sorted(w["scenario"] for w in WIDGET_CATALOG)
     except ImportError:
         # Fallback to known scenarios
         return [

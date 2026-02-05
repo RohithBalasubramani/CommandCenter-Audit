@@ -7,7 +7,6 @@ variant based on the data context (e.g., critical alert → toast, percentage va
 """
 
 import re
-import random
 import logging
 from typing import Optional
 
@@ -420,9 +419,11 @@ class FixtureSelector:
             self._record(least_used)
             return least_used
 
-        # Among top candidates (within 2 points of best), pick randomly for variety
+        # Among top candidates (within 2 points of best), pick deterministically:
+        # sort by score desc then slug asc for stable tiebreak (same input → same output)
         near_best = [c for c in candidates if c[0] >= best_score - 2]
-        slug = random.choice(near_best)[1]
+        near_best.sort(key=lambda c: (-c[0], c[1]))
+        slug = near_best[0][1]
 
         self._record(slug)
         return slug

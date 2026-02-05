@@ -8,7 +8,7 @@ import Blob from "@/components/layer3/Blob";
  */
 export default function DashboardTestPage() {
   return (
-    <div className="h-screen w-screen overflow-auto bg-[var(--cc-bg)]">
+    <div className="h-screen w-screen overflow-hidden bg-[var(--cc-bg)]">
       <Blob />
     </div>
   );

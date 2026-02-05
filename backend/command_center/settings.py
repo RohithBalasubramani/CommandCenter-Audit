@@ -132,9 +132,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # CORS — allow Next.js frontend (dev + production)
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3100',
+    'http://localhost:3200',
     'http://localhost:9210',
     'https://localhost:9210',
     'http://192.168.1.20:3100',
+    'http://192.168.1.20:3200',
     'http://192.168.1.20:9210',
     'https://192.168.1.20:9210',
 ]
@@ -145,6 +147,13 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
     ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '60/minute',
+        'feedback': '20/minute',
+    },
 }
 
 # PersonaPlex server

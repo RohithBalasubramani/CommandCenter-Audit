@@ -64,7 +64,7 @@ User: "Show me energy consumption trends"
 - A data_request telling Stage 4 what to fetch
 
 **Constraints enforced after LLM output:**
-- Max 10 widgets, max 18 height units
+- Max 10 widgets, max 24 height units
 - Max 4 KPIs, max 2 of same scenario
 - Banned: helpview, pulseview
 - Only 1 hero (extras demoted to expanded)

@@ -3,12 +3,47 @@
 import React, { useMemo, useRef, useState, useEffect, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { getWidgetComponent } from "@/components/layer4/widgetRegistry";
+import WidgetWithLifecycle from "@/components/layer4/WidgetWithLifecycle";
 import { FIXTURES } from "@/components/layer4/fixtureData";
 import { useLayoutState } from "./useLayoutState";
 import BlobGrid from "./BlobGrid";
 import WidgetSlot from "./WidgetSlot";
 import { commandCenterBus } from "@/lib/events";
-import type { WidgetInstruction, WidgetSize, WidgetHeightHint } from "@/types";
+import { config } from "@/lib/config";
+import type { WidgetInstruction, WidgetSize, WidgetHeightHint, TransitionType } from "@/types";
+
+/** Transition duration from config (BLOB_TRANSITION_DURATION flag). */
+const TRANSITION_DURATION_S = config.blob.transitionDuration / 1000;
+
+/** Map each blueprint TransitionType to framer-motion initial/exit variants. */
+const TRANSITION_VARIANTS: Record<
+  TransitionType,
+  { initial: Record<string, number>; exit: Record<string, number> }
+> = {
+  "slide-in-from-top": {
+    initial: { opacity: 0, y: -60, scale: 1 },
+    exit:    { opacity: 0, y: -60, scale: 1 },
+  },
+  "slide-in-from-left": {
+    initial: { opacity: 0, x: -60, scale: 1 },
+    exit:    { opacity: 0, x: -60, scale: 1 },
+  },
+  expand: {
+    initial: { opacity: 0, scale: 0.6, x: 0, y: 0 },
+    exit:    { opacity: 0, scale: 0.6, x: 0, y: 0 },
+  },
+  shrink: {
+    initial: { opacity: 0, scale: 1.3, x: 0, y: 0 },
+    exit:    { opacity: 0, scale: 1.3, x: 0, y: 0 },
+  },
+  "fade-out": {
+    initial: { opacity: 0, scale: 1, x: 0, y: 0 },
+    exit:    { opacity: 0, scale: 1, x: 0, y: 0 },
+  },
+};
+
+/** Default transition when layout.transitions doesn't specify one. */
+const DEFAULT_TRANSITION: TransitionType = "slide-in-from-left";
 
 /**
  * Merge fixture data with data_override from Layer 2.
@@ -127,23 +162,35 @@ export default function Blob() {
         {sortedWidgets.map((instruction, index) => {
           const key = widgetKey(instruction, index);
           const WidgetComponent = getWidgetComponent(instruction.scenario);
+          const isDemo = instruction.data_override?._data_source === "demo";
+
+          // Resolve per-widget transition type from layout.transitions map
+          const txType: TransitionType =
+            layout.transitions?.[instruction.scenario] ||
+            layout.transitions?.[key] ||
+            DEFAULT_TRANSITION;
+          const variants = TRANSITION_VARIANTS[txType];
 
           return (
             <motion.div
               key={key}
               layout
-              initial={{ opacity: 0, x: 60, scale: 0.95 }}
-              animate={{ opacity: 1, x: 0, scale: 1 }}
-              exit={{ opacity: 0, x: -60, scale: 0.95 }}
+              initial={variants.initial}
+              animate={{
+                opacity: Math.max(0.4, instruction.relevance ?? 1),
+                x: 0,
+                y: 0,
+                scale: 1,
+              }}
+              exit={variants.exit}
               transition={{
-                type: "spring",
-                stiffness: 300,
-                damping: 30,
+                duration: TRANSITION_DURATION_S,
                 delay: index * 0.05, // Stagger: 50ms per widget
               }}
               className={sizeClasses(instruction.size, instruction.heightHint)}
               data-scenario={instruction.scenario}
               data-size={instruction.size}
+              data-relevance={instruction.relevance}
             >
               {!WidgetComponent ? (
                 <WidgetSlot
@@ -155,6 +202,7 @@ export default function Blob() {
                   widgetKey={key}
                   isPinned={pinnedKeys.has(key)}
                   isFocused={focusedKey === key}
+                  isDemo={isDemo}
                   onPin={() => pinWidget(key)}
                   onDismiss={() => dismissWidget(key)}
                   onResize={(s: WidgetSize) => resizeWidget(key, s)}
@@ -184,6 +232,7 @@ export default function Blob() {
                   widgetKey={key}
                   isPinned={pinnedKeys.has(key)}
                   isFocused={focusedKey === key}
+                  isDemo={isDemo}
                   onPin={() => pinWidget(key)}
                   onDismiss={() => dismissWidget(key)}
                   onResize={(s: WidgetSize) => resizeWidget(key, s)}
@@ -192,7 +241,11 @@ export default function Blob() {
                   onSnapshot={saveSnapshot}
                   onDrillDown={(ctx) => drillDown(instruction.scenario, getFocusLabel(instruction), ctx)}
                 >
-                  <WidgetComponent data={resolveWidgetData(instruction)} />
+                  <WidgetWithLifecycle
+                    scenario={instruction.scenario}
+                    data={resolveWidgetData(instruction)}
+                    Component={WidgetComponent}
+                  />
                 </WidgetSlot>
               )}
             </motion.div>
@@ -216,9 +269,12 @@ const HEIGHT_CLASSES: Record<WidgetHeightHint, string> = {
 };
 
 /**
- * Size + heightHint → grid column-span + row-span + max-height classes.
- * Column span comes from WidgetSize; row span from heightHint.
- * Hero always gets row-span-4 regardless of hint.
+ * Size + heightHint → responsive grid column-span + row-span classes.
+ *
+ * Responsive breakpoints (per README blueprint):
+ *   mobile (<768):     1 column  → all widgets full width
+ *   tablet (768-1279): 6 columns → compact=3, normal=3, expanded=6, hero=6
+ *   laptop/desktop (1280+): 12 columns → compact=3, normal=4, expanded=6, hero=12
  */
 function sizeClasses(size: string, heightHint?: WidgetHeightHint): string {
   const h = heightHint ?? "medium";
@@ -226,16 +282,16 @@ function sizeClasses(size: string, heightHint?: WidgetHeightHint): string {
 
   switch (size) {
     case "hero":
-      return "col-span-12 row-span-4";
+      return "col-span-1 md:col-span-6 xl:col-span-12 row-span-4";
     case "expanded":
-      return `col-span-6 ${heightCls}`;
+      return `col-span-1 md:col-span-6 xl:col-span-6 ${heightCls}`;
     case "normal":
-      return `col-span-4 ${heightCls}`;
+      return `col-span-1 md:col-span-3 xl:col-span-4 ${heightCls}`;
     case "compact":
-      return `col-span-3 ${heightCls}`;
+      return `col-span-1 md:col-span-3 xl:col-span-3 ${heightCls}`;
     case "hidden":
       return "hidden";
     default:
-      return `col-span-4 ${heightCls}`;
+      return `col-span-1 md:col-span-3 xl:col-span-4 ${heightCls}`;
   }
 }

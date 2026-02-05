@@ -166,6 +166,18 @@ export class CommandCenterPage {
     });
   }
 
+  async waitForWidgets(minCount = 1, timeout = 60000) {
+    // Wait for the grid container first
+    await this.waitForLayout(timeout);
+    // Then wait for actual widget elements to appear inside
+    const deadline = Date.now() + timeout;
+    while (Date.now() < deadline) {
+      const count = await this.getWidgetCount();
+      if (count >= minCount) return;
+      await this.page.waitForTimeout(500);
+    }
+  }
+
   async getWidgets(): Promise<WidgetInfo[]> {
     const widgets: WidgetInfo[] = [];
 

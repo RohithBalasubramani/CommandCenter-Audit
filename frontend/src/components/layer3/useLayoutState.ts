@@ -18,6 +18,17 @@ const SNAPSHOT_STORAGE_KEY = "cc-snapshots";
 const MAX_SNAPSHOTS = 10;
 
 /**
+ * Relevance decay configuration (per README blueprint):
+ *   - 5-minute decay to 0.2 baseline
+ *   - Pinned widgets immune to decay
+ *   - Decay tick every 30 seconds
+ */
+const DECAY_INTERVAL_MS = 30_000;        // tick every 30s
+const DECAY_TOTAL_MS = 5 * 60_000;       // full decay over 5 minutes
+const DECAY_BASELINE = 0.2;              // floor relevance value
+const DECAY_PER_TICK = (1.0 - DECAY_BASELINE) / (DECAY_TOTAL_MS / DECAY_INTERVAL_MS); // ~0.08 per tick
+
+/**
  * useLayoutState — manages the current LayoutJSON + widget interactions.
  *
  * - Initializes with DEFAULT_LAYOUT (project engineer dashboard)
@@ -156,6 +167,30 @@ export function useLayoutState() {
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [focusedKey, unfocus]);
+
+  // --- Relevance Decay ---
+  // Tick every DECAY_INTERVAL_MS: reduce each non-pinned widget's relevance
+  // by DECAY_PER_TICK, clamped to DECAY_BASELINE floor.
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setLayoutState((prev) => {
+        let changed = false;
+        const widgets = prev.widgets.map((w, i) => {
+          const key = widgetKey(w.scenario, w.fixture, i);
+          // Pinned widgets are immune to decay
+          if (pinnedKeys.has(key)) return w;
+          // Already at baseline
+          if (w.relevance <= DECAY_BASELINE) return w;
+          changed = true;
+          const newRelevance = Math.max(DECAY_BASELINE, w.relevance - DECAY_PER_TICK);
+          return { ...w, relevance: parseFloat(newRelevance.toFixed(3)) };
+        });
+        return changed ? { ...prev, widgets } : prev;
+      });
+    }, DECAY_INTERVAL_MS);
+
+    return () => clearInterval(timer);
+  }, [pinnedKeys]);
 
   /** Save current layout as a snapshot to localStorage. */
   const saveSnapshot = useCallback(() => {

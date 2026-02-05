@@ -67,7 +67,16 @@ backend/tts/
 backend/chroma_db/
 *.sqlite3
 
+# RL checkpoints and training data
+rl_checkpoints/
+rl_training_data/
+
+# Logs
+logs/
+
 # Test artifacts
 playwright-report/
 e2e-artifacts/
 mega-validation-evidence/
+frontend/e2e-audit-evidence/
+tests/ci_accuracy_report.json

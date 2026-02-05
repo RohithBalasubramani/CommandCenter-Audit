@@ -471,9 +471,11 @@ class OllamaLLMService:
         self,
         base_url: str = OLLAMA_BASE_URL,
         model: str = OLLAMA_MODEL,
+        cache: "LLMCache" = None,
     ):
         self.base_url = base_url
         self.model = model
+        self.cache = cache
 
     def generate(
         self,
@@ -486,6 +488,12 @@ class OllamaLLMService:
         if not REQUESTS_AVAILABLE:
             raise ImportError("requests not installed. Run: pip install requests")
 
+        # Check cache first
+        if self.cache is not None:
+            cached = self.cache.get(prompt, system_prompt or "")
+            if cached is not None:
+                return cached
+
         url = f"{self.base_url}/api/generate"
 
         # Prepend /no_think for qwen3 models to disable thinking mode
@@ -497,6 +505,7 @@ class OllamaLLMService:
             "model": self.model,
             "prompt": actual_prompt,
             "stream": False,
+            "keep_alive": -1,
             "options": {
                 "temperature": temperature,
                 "num_predict": max_tokens,
@@ -514,7 +523,13 @@ class OllamaLLMService:
             # Strip any remaining <think>...</think> tags (qwen3, deepseek-r1)
             import re as _re
             clean = _re.sub(r'<think>.*?</think>', '', raw, flags=_re.DOTALL).strip()
-            return clean if clean else raw.strip()
+            result_text = clean if clean else raw.strip()
+
+            # Store in cache
+            if self.cache is not None:
+                self.cache.put(prompt, result_text, system_prompt or "")
+
+            return result_text
         except requests.exceptions.ConnectionError:
             logger.error(f"Failed to connect to Ollama at {self.base_url}")
             return "[LLM unavailable - Ollama not running]"
@@ -571,12 +586,19 @@ class OllamaLLMService:
         if not REQUESTS_AVAILABLE:
             raise ImportError("requests not installed. Run: pip install requests")
 
+        # Check cache first
+        if self.cache is not None:
+            cached = self.cache.get(prompt, system_prompt or "")
+            if cached is not None:
+                return cached
+
         url = f"{self.base_url}/api/generate"
         payload = {
             "model": self.model,
             "prompt": prompt,
             "stream": False,
             "format": "json",
+            "keep_alive": -1,
             "options": {
                 "temperature": temperature,
                 "num_predict": max_tokens,
@@ -590,7 +612,13 @@ class OllamaLLMService:
                 response = requests.post(url, json=payload, timeout=90)
                 response.raise_for_status()
                 raw = response.json().get("response", "")
-                return json.loads(raw)
+                parsed = json.loads(raw)
+
+                # Store in cache
+                if self.cache is not None:
+                    self.cache.put(prompt, parsed, system_prompt or "")
+
+                return parsed
             except json.JSONDecodeError:
                 logger.warning(f"JSON parse failed (attempt {attempt + 1}): {raw[:200]}")
                 continue
@@ -612,6 +640,110 @@ class OllamaLLMService:
 
 
 # ============================================================
+# Semantic LLM Cache
+# ============================================================
+
+class LLMCache:
+    """
+    Semantic cache for LLM responses using embedding similarity.
+
+    Uses EmbeddingService to compute cache keys via cosine similarity.
+    In-memory with TTL — no Redis required.
+    """
+
+    def __init__(
+        self,
+        similarity_threshold: float = 0.95,
+        ttl_seconds: int = 300,
+        max_entries: int = 200,
+    ):
+        self.similarity_threshold = similarity_threshold
+        self.ttl_seconds = ttl_seconds
+        self.max_entries = max_entries
+        self._embedding_service = None
+
+        # Cache: list of (embedding_ndarray, response, timestamp)
+        self._cache: list = []
+        self._lock = __import__("threading").Lock()
+
+        # Stats
+        self.hits = 0
+        self.misses = 0
+
+    @property
+    def embedding_service(self):
+        if self._embedding_service is None:
+            self._embedding_service = EmbeddingService()
+        return self._embedding_service
+
+    def _cosine_similarity(self, a, b) -> float:
+        import numpy as np
+        dot = np.dot(a, b)
+        norm = np.linalg.norm(a) * np.linalg.norm(b)
+        return float(dot / norm) if norm > 0 else 0.0
+
+    def get(self, prompt: str, system_prompt: str = "") -> object:
+        """Look up a cached response for a semantically similar prompt."""
+        import time as _time
+        import numpy as np
+
+        now = _time.time()
+        cache_text = f"{system_prompt}\n{prompt}" if system_prompt else prompt
+
+        try:
+            query_emb = np.array(self.embedding_service.embed(cache_text))
+        except Exception:
+            return None
+
+        with self._lock:
+            # Evict expired
+            self._cache = [e for e in self._cache if now - e[2] < self.ttl_seconds]
+
+            best_sim = 0.0
+            best_response = None
+            for emb, response, ts in self._cache:
+                sim = self._cosine_similarity(query_emb, emb)
+                if sim > best_sim:
+                    best_sim = sim
+                    best_response = response
+
+            if best_sim >= self.similarity_threshold:
+                self.hits += 1
+                logger.debug(f"LLMCache HIT: similarity={best_sim:.3f}")
+                return best_response
+
+        self.misses += 1
+        return None
+
+    def put(self, prompt: str, response: object, system_prompt: str = ""):
+        """Store a response in the cache."""
+        import time as _time
+        import numpy as np
+
+        cache_text = f"{system_prompt}\n{prompt}" if system_prompt else prompt
+        try:
+            embedding = np.array(self.embedding_service.embed(cache_text))
+        except Exception:
+            return
+
+        now = _time.time()
+        with self._lock:
+            if len(self._cache) >= self.max_entries:
+                self._cache.sort(key=lambda e: e[2])
+                self._cache = self._cache[-(self.max_entries - 1):]
+            self._cache.append((embedding, response, now))
+
+    def get_stats(self) -> dict:
+        total = self.hits + self.misses
+        return {
+            "hits": self.hits,
+            "misses": self.misses,
+            "hit_rate": round(self.hits / total, 3) if total > 0 else 0,
+            "entries": len(self._cache),
+        }
+
+
+# ============================================================
 # Industrial RAG Pipeline
 # ============================================================
 
@@ -626,10 +758,12 @@ class IndustrialRAGPipeline:
 
     def __init__(self):
         self.vector_store = VectorStoreService()
-        self.llm = OllamaLLMService()  # legacy single-model (backward compat)
+        # Shared semantic cache for both LLM instances
+        self._llm_cache = LLMCache()
+        self.llm = OllamaLLMService(cache=self._llm_cache)  # legacy single-model (backward compat)
         # Pipeline v2: dual-model LLM instances
-        self.llm_fast = OllamaLLMService(model=OLLAMA_MODEL_FAST)
-        self.llm_quality = OllamaLLMService(model=OLLAMA_MODEL_QUALITY)
+        self.llm_fast = OllamaLLMService(model=OLLAMA_MODEL_FAST, cache=self._llm_cache)
+        self.llm_quality = OllamaLLMService(model=OLLAMA_MODEL_QUALITY, cache=self._llm_cache)
         self._indexed = False
 
     def index_equipment_from_db(self):

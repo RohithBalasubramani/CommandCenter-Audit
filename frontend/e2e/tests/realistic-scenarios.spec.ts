@@ -22,7 +22,7 @@ test.describe('Realistic User Scenarios', () => {
 
   test('should show pump status with appropriate widgets', async () => {
     await page.sendQuery('What is the current status of all pumps?');
-    await page.waitForLayout();
+    await page.waitForWidgets(1);
 
     const widgetCount = await page.getWidgetCount();
     expect(widgetCount).toBeGreaterThanOrEqual(1);
@@ -33,21 +33,25 @@ test.describe('Realistic User Scenarios', () => {
 
   test('should show temperature trend over time', async () => {
     await page.sendQuery('Show me the temperature trend for the past 24 hours');
-    await page.waitForLayout();
+    await page.waitForWidgets(1);
 
     const widgets = await page.getWidgets();
     expect(widgets.length).toBeGreaterThanOrEqual(1);
 
     // Expect a trend widget
-    const hasTrendWidget = widgets.some(w =>
-      w.scenario.includes('trend') || w.element.locator('.recharts-line').count() > 0
-    );
+    let hasTrendWidget = false;
+    for (const w of widgets) {
+      if (w.scenario.includes('trend') || (await w.element.locator('.recharts-line').count()) > 0) {
+        hasTrendWidget = true;
+        break;
+      }
+    }
     // This may or may not have a trend widget depending on data
   });
 
   test('should compare two pieces of equipment', async () => {
     await page.sendQuery('Compare pump 1 and pump 2 performance');
-    await page.waitForLayout();
+    await page.waitForWidgets(1);
 
     const widgetCount = await page.getWidgetCount();
     expect(widgetCount).toBeGreaterThanOrEqual(1);
@@ -55,7 +59,7 @@ test.describe('Realistic User Scenarios', () => {
 
   test('should show energy breakdown', async () => {
     await page.sendQuery('What is the energy consumption breakdown by equipment?');
-    await page.waitForLayout();
+    await page.waitForWidgets(1);
 
     const widgets = await page.getWidgets();
     expect(widgets.length).toBeGreaterThanOrEqual(1);
@@ -264,7 +268,7 @@ test.describe('Realistic User Scenarios', () => {
 
   test('should handle equipment with alerts needing maintenance', async () => {
     await page.sendQuery('Show me equipment with alerts that need maintenance');
-    await page.waitForLayout();
+    await page.waitForWidgets(1);
 
     const widgetCount = await page.getWidgetCount();
     // Complex query should produce multiple widgets
@@ -281,7 +285,7 @@ test.describe('Realistic User Scenarios', () => {
 
   test('should compare energy with alerts highlighted', async () => {
     await page.sendQuery('Compare this week\'s energy vs last week with any alerts highlighted');
-    await page.waitForLayout();
+    await page.waitForWidgets(1);
 
     const widgetCount = await page.getWidgetCount();
     expect(widgetCount).toBeGreaterThanOrEqual(1);

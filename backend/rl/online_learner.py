@@ -89,7 +89,7 @@ class OnlineLearner:
 
     def _get_buffer_path(self) -> Path:
         """Get path to persisted buffer file."""
-        return Path(TRAINING_DATA_DIR) / "feedback_buffer.json"
+        return Path(self.checkpoint_dir) / "feedback_buffer.json"
 
     def _load_buffer(self):
         """Load persisted buffer from disk."""

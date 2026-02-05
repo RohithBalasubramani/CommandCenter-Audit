@@ -99,7 +99,9 @@ export function useVoicePipeline(deviceId?: string): UseVoicePipelineReturn {
   const [error, setError] = useState<string | null>(null);
   const [aiResponse, setAiResponse] = useState("");
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
-  const [inputMode, setInputMode] = useState<VoiceInputMode>("push-to-talk");
+  const [inputMode, setInputMode] = useState<VoiceInputMode>(
+    config.personaPlex.alwaysOn ? "continuous" : "push-to-talk"
+  );
 
   // Layer 2
   const [layer2Status, setLayer2Status] = useState<"off" | "checking" | "ready" | "processing" | "error">("off");
@@ -586,6 +588,23 @@ export function useVoicePipeline(deviceId?: string): UseVoicePipelineReturn {
     commandCenterBus.emit({ type: "VOICE_INPUT_STOP" });
     console.info("[VoicePipeline] Stopped");
   }, [stopSTT, stopTTS, stopVAD, inputMode, addMessage, processOneTranscript]);
+
+  // SPOTVOX_ALWAYS_ON: auto-start listening on mount (after STT init)
+  const hasAutoStartedRef = useRef(false);
+  useEffect(() => {
+    if (!config.personaPlex.alwaysOn) return;
+    if (hasAutoStartedRef.current) return;
+    if (!isSTTSupported) return;
+    // Delay briefly to let STT/TTS initialize
+    const timer = setTimeout(() => {
+      if (!hasAutoStartedRef.current) {
+        hasAutoStartedRef.current = true;
+        console.info("[VoicePipeline] SPOTVOX_ALWAYS_ON: auto-starting voice pipeline");
+        start();
+      }
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [isSTTSupported, start]);
 
   // Send text directly to Layer 2 (bypasses STT — used by text input overlay)
   const sendTextDirect = useCallback((text: string) => {

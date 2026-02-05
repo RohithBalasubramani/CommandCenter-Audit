@@ -26,6 +26,25 @@ from layer2.rag_pipeline import (
     WORK_ORDERS_COLLECTION,
 )
 from layer2.widget_schemas import WIDGET_SCHEMAS, validate_widget_data, ValidationError
+
+
+def _validate_widget_data(scenario: str, data: dict) -> tuple[bool, list[str]]:
+    """
+    Validate widget data against its schema.
+
+    Returns:
+        (is_valid, missing_field_names) tuple for backward-compatible test access.
+    """
+    result = validate_widget_data(scenario, data, raise_on_error=False)
+    if result["is_valid"]:
+        return (True, [])
+    missing = []
+    for error in result.get("errors", []):
+        if "Missing required field" in error and "'" in error:
+            missing.append(error.split("'")[1])
+        elif "is null" in error and "'" in error:
+            missing.append(error.split("'")[1])
+    return (False, missing)
 from layer2.widget_normalizer import normalize_widget_data, NormalizationError
 from layer2.widget_selector import WidgetPlanItem
 

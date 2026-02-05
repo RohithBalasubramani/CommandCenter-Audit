@@ -170,11 +170,20 @@ def convert_to_gguf(
 
         # Then quantize
         if quantization != "f16":
-            quantize_bin = Path(llama_cpp_path) / "llama-quantize"
-            if not quantize_bin.exists():
-                quantize_bin = Path(llama_cpp_path) / "quantize"
+            # Check multiple locations for the quantize binary
+            # cmake builds put it in build/bin/, older make builds put it in root
+            quantize_candidates = [
+                Path(llama_cpp_path) / "build" / "bin" / "llama-quantize",
+                Path(llama_cpp_path) / "llama-quantize",
+                Path(llama_cpp_path) / "quantize",
+            ]
+            quantize_bin = None
+            for candidate in quantize_candidates:
+                if candidate.exists():
+                    quantize_bin = candidate
+                    break
 
-            if quantize_bin.exists():
+            if quantize_bin is not None:
                 cmd = [str(quantize_bin), f16_path, output_path, quantization]
                 logger.info(f"Running: {' '.join(cmd)}")
                 result = subprocess.run(cmd, capture_output=True, text=True)

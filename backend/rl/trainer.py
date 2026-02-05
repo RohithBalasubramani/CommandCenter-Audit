@@ -206,7 +206,7 @@ class CommandCenterDPOTrainer:
             args=training_args,
             train_dataset=train_dataset,
             eval_dataset=eval_dataset,
-            tokenizer=self.tokenizer,
+            processing_class=self.tokenizer,
         )
 
         try:
@@ -262,7 +262,7 @@ class CommandCenterDPOTrainer:
             model=self.model,
             args=training_args,
             eval_dataset=eval_dataset,
-            tokenizer=self.tokenizer,
+            processing_class=self.tokenizer,
         )
 
         return trainer.evaluate()

@@ -4,12 +4,16 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Canvas from "@/components/canvas/Canvas";
 import Blob from "@/components/layer3/Blob";
 import VoiceInterfaceV2 from "@/components/layer1/VoiceInterfaceV2";
+import VoiceInterface from "@/components/layer1/VoiceInterface";
 import TranscriptPanel from "@/components/layer1/TranscriptPanel";
 import VoiceControlBar from "@/components/layer1/VoiceControlBar";
 import TextInputOverlay from "@/components/layer1/TextInputOverlay";
 import StatusBar from "@/components/status-bar/StatusBar";
 import { DebugPanel } from "@/components/debug";
+import LedgerPanel from "@/components/ledger/LedgerPanel";
 import { commandCenterBus } from "@/lib/events";
+import { useSystemTriggers } from "@/lib/useSystemTriggers";
+import { config } from "@/lib/config";
 import type { Transcript } from "@/types";
 
 /**
@@ -29,24 +33,24 @@ export default function CommandCenterPage() {
   const [transcripts, setTranscripts] = useState<Transcript[]>([]);
   const transcriptEndRef = useRef<HTMLDivElement>(null);
 
+  // System triggers: poll backend for alerts, threshold breaches, shift changes
+  useSystemTriggers();
+
   // Ctrl+B toggles view, Ctrl+Shift+K toggles text input overlay
-  if (typeof window !== "undefined") {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useState(() => {
-      const handler = (e: KeyboardEvent) => {
-        if (e.ctrlKey && e.key === "b") {
-          e.preventDefault();
-          setView((v) => (v === "voice" ? "dashboard" : "voice"));
-        }
-        if (e.ctrlKey && e.shiftKey && e.key === "K") {
-          e.preventDefault();
-          setShowTextInput((v) => !v);
-        }
-      };
-      window.addEventListener("keydown", handler);
-      return () => window.removeEventListener("keydown", handler);
-    });
-  }
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === "b") {
+        e.preventDefault();
+        setView((v) => (v === "voice" ? "dashboard" : "voice"));
+      }
+      if (e.ctrlKey && e.shiftKey && e.key === "K") {
+        e.preventDefault();
+        setShowTextInput((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   const handleTextSubmit = useCallback((text: string) => {
     commandCenterBus.emit({ type: "TEXT_INPUT_SUBMIT", text });
@@ -82,14 +86,24 @@ export default function CommandCenterPage() {
       <Canvas statusBar={<StatusBar />}>
         {view === "voice" ? (
           <>
-            {/* Layer 1: Voice I/O — full canvas */}
-            <VoiceInterfaceV2 />
+            {/* Layer 1: Voice I/O — routed by SPOTVOX_MODE flag */}
+            {config.flags.spotvoxMode === "4layer" ? (
+              <VoiceInterfaceV2 />
+            ) : (
+              <VoiceInterface />
+            )}
             <TranscriptPanel />
           </>
         ) : (
           <>
-            {/* Layer 3: Blob — widget dashboard */}
-            <Blob />
+            {/* Layer 3: Blob — widget dashboard (gated by ENABLE_BLOB flag) */}
+            {config.flags.enableBlob ? (
+              <Blob />
+            ) : (
+              <div className="h-full flex items-center justify-center text-neutral-500 text-sm">
+                Blob layout disabled (ENABLE_BLOB=false)
+              </div>
+            )}
 
             {/* Layer 1: Compact voice control bar — floating at bottom */}
             <div className="absolute bottom-14 left-1/2 -translate-x-1/2 z-10">
@@ -244,6 +258,9 @@ export default function CommandCenterPage() {
         onClose={() => setShowTextInput(false)}
         onSubmit={handleTextSubmit}
       />
+
+      {/* Ledger Panel — Gated by ENABLE_LEDGER flag */}
+      {config.flags.enableLedger && <LedgerPanel />}
 
       {/* Debug Panel — Toggle with Ctrl+D */}
       <DebugPanel />

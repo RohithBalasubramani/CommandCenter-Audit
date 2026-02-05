@@ -20,7 +20,7 @@ TRAINING_DATA_DIR = PROJECT_DIR / "rl_training_data"
 # Model configuration
 MODEL_CONFIG = {
     # Base model - should match what Ollama uses
-    "base_model": os.getenv("RL_BASE_MODEL", "meta-llama/Llama-3.1-8B-Instruct"),
+    "base_model": os.getenv("RL_BASE_MODEL", "unsloth/Meta-Llama-3.1-8B-Instruct"),
     # Alternative for smaller GPUs
     "base_model_small": "meta-llama/Llama-3.2-3B-Instruct",
     # Output model name for Ollama
@@ -118,6 +118,16 @@ CONTINUOUS_RL_CONFIG = {
     "max_reward": 2.0,              # Clip reward to prevent outliers
     "min_reward": -2.0,
     "baseline_model_name": None,    # Keep baseline for A/B (set via env)
+
+    # Tier 1: Low-rank scorer
+    "scorer_rank": 8,               # Low-rank factorization rank
+    "scorer_lr": 1e-3,              # Learning rate for scorer
+    "scorer_checkpoint_every": 50,  # Checkpoint frequency (feedback events)
+
+    # Tier 2: LoRA DPO fine-tuning
+    "lora_min_pairs": 50,           # Min DPO pairs before triggering training
+    "lora_train_cooldown": 3600,    # Seconds between LoRA training runs
+    "lora_auto_deploy": True,       # Auto-deploy to Ollama after training
 }
 
 # Training data configuration

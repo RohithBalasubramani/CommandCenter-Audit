@@ -28,14 +28,31 @@ from layer2.fixture_selector import FixtureSelector
 
 # Pipeline v2 imports
 from layer2.intent_parser import IntentParser, ParsedIntent
-from layer2.widget_selector import WidgetSelector, WidgetPlan
+from layer2.widget_selector import WidgetSelector, WidgetPlan, MAX_HEIGHT_UNITS
 from layer2.data_collector import SchemaDataCollector
 from layer2.widget_catalog import CATALOG_BY_SCENARIO
+from layer2.reconciliation.pipeline import ReconciliationPipeline
 
 logger = logging.getLogger(__name__)
 
 # Pipeline v2 flag — set PIPELINE_V2=1 env var to enable
 PIPELINE_V2 = os.environ.get("PIPELINE_V2", "1") == "1"
+
+# Performance budgets (per audit_tests.py / README blueprint) — runtime-enforced
+BUDGET_INTENT_MS = 500
+BUDGET_RAG_MS = 2000
+BUDGET_WIDGET_SELECT_MS = 3000
+BUDGET_TOTAL_MS = 8000
+
+# Feature flags (per README blueprint)
+ENABLE_RAG = os.environ.get("ENABLE_RAG", "1") == "1"
+RAG_DOMAINS_ENABLED = {
+    "industrial": os.environ.get("RAG_INDUSTRIAL_ENABLED", "1") == "1",
+    "supply": os.environ.get("RAG_SUPPLY_ENABLED", "1") == "1",
+    "people": os.environ.get("RAG_PEOPLE_ENABLED", "1") == "1",
+    "tasks": os.environ.get("RAG_TASKS_ENABLED", "1") == "1",
+    "alerts": os.environ.get("RAG_ALERTS_ENABLED", "1") == "1",
+}
 
 # Domain keywords for intent detection
 DOMAIN_KEYWORDS = {
@@ -205,8 +222,21 @@ class OrchestratorTimings:
     widget_select_ms: int = 0
     data_collect_ms: int = 0
     fixture_select_ms: int = 0
+    reconcile_ms: int = 0
     voice_generate_ms: int = 0
     total_ms: int = 0
+    budget_warnings: list = field(default_factory=list)
+
+    def check_budget(self, stage: str, elapsed_ms: int, budget_ms: int):
+        """Check if a stage exceeded its performance budget and log a warning."""
+        if elapsed_ms > budget_ms:
+            msg = f"BUDGET EXCEEDED: {stage} took {elapsed_ms}ms (budget: {budget_ms}ms)"
+            logger.warning(f"[perf] {msg}")
+            self.budget_warnings.append({
+                "stage": stage,
+                "elapsed_ms": elapsed_ms,
+                "budget_ms": budget_ms,
+            })
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -292,6 +322,7 @@ class Layer2Orchestrator:
                     self._intent_parser = IntentParser()
         parsed = self._intent_parser.parse(transcript)
         timings.intent_parse_ms = int((time.time() - stage_start) * 1000)
+        timings.check_budget("intent_parse", timings.intent_parse_ms, BUDGET_INTENT_MS)
 
         logger.info(
             f"[v2] Intent: type={parsed.type} domains={parsed.domains} "
@@ -380,10 +411,11 @@ class Layer2Orchestrator:
                     self._widget_selector = WidgetSelector()
         widget_plan = self._widget_selector.select(parsed, data_summary, user_context)
         timings.widget_select_ms = int((time.time() - stage_start) * 1000)
+        timings.check_budget("widget_select", timings.widget_select_ms, BUDGET_WIDGET_SELECT_MS)
 
         logger.info(
             f"[v2] Widget plan: {len(widget_plan.widgets)} widgets, "
-            f"height={widget_plan.total_height_units}/{18}, "
+            f"height={widget_plan.total_height_units}/{MAX_HEIGHT_UNITS}, "
             f"method={widget_plan.select_method} ({timings.widget_select_ms}ms)"
         )
 
@@ -396,6 +428,7 @@ class Layer2Orchestrator:
                     self._data_collector = SchemaDataCollector()
         widget_data = self._data_collector.collect_all(widget_plan.widgets, transcript)
         timings.data_collect_ms = int((time.time() - stage_start) * 1000)
+        timings.check_budget("data_collect", timings.data_collect_ms, BUDGET_RAG_MS)
 
         # Inject _query_context into data_override so fixture selection can match
         # on semantic content (not just equipment names from RAG)
@@ -434,7 +467,23 @@ class Layer2Orchestrator:
 
                 w["data_override"] = dor
 
-        # Stage 4: Fixture Selection (LLM-based with rule-based fallback)
+        # Build preliminary layout for voice (only needs scenario/why/heading — not fixtures)
+        preliminary_layout = {
+            "heading": widget_plan.heading,
+            "widgets": [
+                {"scenario": w["scenario"], "why": w.get("why", ""), "size": w.get("size", "normal")}
+                for w in widget_data
+            ],
+        }
+
+        # Stage 5 (early start): Submit voice response to thread pool
+        # Voice generation (70B) runs concurrently with fixture selection (8B)
+        voice_start = time.time()
+        voice_future = self.executor.submit(
+            self._generate_voice_response_v2, parsed, preliminary_layout, transcript
+        )
+
+        # Stage 4: Fixture Selection (LLM-based with rule-based fallback) — concurrent with voice
         stage_start = time.time()
         from layer2.llm_fixture_selector import LLMFixtureSelector
         story = f"{widget_plan.heading} — answering '{transcript[:80]}'"
@@ -480,19 +529,30 @@ class Layer2Orchestrator:
         # Row-packing: upsize widgets to fill 12-column grid rows
         widget_data = self._pack_row_gaps(widget_data)
 
+        # Stage 4.5: Reconciliation — validate/transform each widget's data
+        stage_start = time.time()
+        widget_data = self._reconcile_widget_data(widget_data)
+        timings.reconcile_ms = int((time.time() - stage_start) * 1000)
+        logger.info(f"[v2] Reconciliation: {timings.reconcile_ms}ms for {len(widget_data)} widgets")
+
         layout_json = {
             "heading": widget_plan.heading,
             "widgets": widget_data,
             "transitions": {},
         }
 
-        # Stage 5: Layout-Aware Voice Response (70B quality model)
-        stage_start = time.time()
-        voice_response = self._generate_voice_response_v2(parsed, layout_json, transcript)
-        timings.voice_generate_ms = int((time.time() - stage_start) * 1000)
+        # Collect voice response (was running concurrently with fixture selection)
+        try:
+            voice_response = voice_future.result(timeout=30)
+        except Exception as e:
+            logger.warning(f"[v2] Voice future failed: {e}")
+            n = len(widget_data)
+            voice_response = f"Here's what I found. I've prepared a dashboard with {n} widgets showing the relevant data."
+        timings.voice_generate_ms = int((time.time() - voice_start) * 1000)
 
         processing_time = int((time.time() - start_time) * 1000)
         timings.total_ms = processing_time
+        timings.check_budget("total_pipeline", timings.total_ms, BUDGET_TOTAL_MS)
 
         logger.info(
             f"[v2] Complete: {processing_time}ms — {len(widget_data)} widgets — "
@@ -501,8 +561,11 @@ class Layer2Orchestrator:
         logger.info(
             f"[v2] Timings: intent={timings.intent_parse_ms}ms, prefetch={timings.data_prefetch_ms}ms, "
             f"widget_select={timings.widget_select_ms}ms, data_collect={timings.data_collect_ms}ms, "
-            f"fixture={timings.fixture_select_ms}ms, voice={timings.voice_generate_ms}ms"
+            f"fixture={timings.fixture_select_ms}ms, reconcile={timings.reconcile_ms}ms, "
+            f"voice={timings.voice_generate_ms}ms"
         )
+        if timings.budget_warnings:
+            logger.warning(f"[v2] Budget violations: {timings.budget_warnings}")
 
         # Save to user memory for future context-aware selections
         try:
@@ -543,6 +606,45 @@ class Layer2Orchestrator:
             timings=timings,  # F1 Fix: Include per-stage latency breakdown
             query_id=query_id,  # For RL feedback tracking
         )
+
+    def _reconcile_widget_data(self, widgets: list) -> list:
+        """Run reconciliation pipeline on each widget's data_override.
+
+        Validates and transforms LLM output against widget schemas.
+        On failure, falls back to the original data (graceful degradation).
+        """
+        if not hasattr(self, "_reconciliation_pipeline"):
+            self._reconciliation_pipeline = ReconciliationPipeline(
+                enable_domain_normalization=True,
+            )
+
+        reconciled = []
+        for w in widgets:
+            scenario = w.get("scenario", "")
+            data_override = w.get("data_override")
+            if not data_override or not isinstance(data_override, dict):
+                reconciled.append(w)
+                continue
+
+            try:
+                result = self._reconciliation_pipeline.process(scenario, data_override)
+                if result.success and result.data:
+                    w["data_override"] = result.data
+                    if result.assumptions:
+                        logger.debug(
+                            f"[reconcile] {scenario}: {len(result.assumptions)} assumptions applied"
+                        )
+                else:
+                    # Graceful fallback: keep original data on refusal
+                    reason = result.refusal.reason if result.refusal else "unknown"
+                    logger.warning(f"[reconcile] {scenario}: refusal ({reason}), keeping original data")
+            except Exception as e:
+                # Non-fatal: reconciliation errors should never block the pipeline
+                logger.warning(f"[reconcile] {scenario}: error ({e}), keeping original data")
+
+            reconciled.append(w)
+
+        return reconciled
 
     def _pack_row_gaps(self, widgets: list) -> list:
         """Adjust widget sizes to eliminate column gaps in 12-col grid.
@@ -915,9 +1017,17 @@ Response:"""
         """
         results = []
 
-        # Submit queries in parallel
+        # Submit queries in parallel (respecting feature flags)
         futures = {}
         for domain in intent.domains:
+            # Feature flag: skip RAG if globally disabled or domain disabled
+            if not ENABLE_RAG:
+                logger.info(f"[RAG] Skipping {domain} — ENABLE_RAG=0")
+                continue
+            if not RAG_DOMAINS_ENABLED.get(domain, True):
+                logger.info(f"[RAG] Skipping {domain} — RAG_{domain.upper()}_ENABLED=0")
+                continue
+
             future = self.executor.submit(
                 self._query_rag_pipeline,
                 domain,
@@ -1144,8 +1254,14 @@ Response:"""
         return data
 
     def _get_industrial_stub_data(self, query: str, entities: dict) -> dict:
-        """Stub data for industrial domain."""
+        """
+        Stub data for industrial domain.
+
+        Marker fix: demo markers added so frontend can detect fallback stubs.
+        """
         return {
+            "_data_source": "demo",
+            "_integration_status": "pending",
             "metrics": [
                 {"name": "grid_voltage", "value": 238.4, "unit": "V", "status": "normal"},
                 {"name": "total_power", "value": 1247.8, "unit": "kW", "status": "normal"},
@@ -1156,12 +1272,18 @@ Response:"""
                 {"id": "pump_3", "name": "Pump 3", "status": "warning", "health": 78},
                 {"id": "pump_4", "name": "Pump 4", "status": "running", "health": 88},
             ],
-            "summary": "3 of 4 pumps running normally. Pump 3 showing elevated temperature.",
+            "summary": "Demo data — industrial RAG fallback. Showing sample device data.",
         }
 
     def _get_alerts_stub_data(self, query: str, entities: dict) -> dict:
-        """Stub data for alerts domain."""
+        """
+        Stub data for alerts domain.
+
+        Marker fix: demo markers added so frontend can detect fallback stubs.
+        """
         return {
+            "_data_source": "demo",
+            "_integration_status": "pending",
             "alerts": [
                 {
                     "id": "alert_1",
@@ -1172,7 +1294,7 @@ Response:"""
                     "acknowledged": False,
                 },
             ],
-            "summary": "1 active warning alert for Pump 3 temperature.",
+            "summary": "Demo data — alerts fallback. Showing sample alert data.",
             "count": 1,
         }
 
@@ -3182,13 +3304,17 @@ Response:"""
         return None
 
 
-# Singleton instance
+# Singleton instance — thread-safe with double-check locking
+import threading as _threading
 _orchestrator = None
+_orchestrator_lock = _threading.Lock()
 
 
 def get_orchestrator() -> Layer2Orchestrator:
-    """Get or create the orchestrator singleton."""
+    """Get or create the orchestrator singleton (thread-safe)."""
     global _orchestrator
     if _orchestrator is None:
-        _orchestrator = Layer2Orchestrator()
+        with _orchestrator_lock:
+            if _orchestrator is None:
+                _orchestrator = Layer2Orchestrator()
     return _orchestrator

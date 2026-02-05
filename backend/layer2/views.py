@@ -1,7 +1,17 @@
+import os
+import uuid as _uuid
+
 from rest_framework import viewsets, status
-from rest_framework.decorators import action, api_view
+from rest_framework.decorators import action, api_view, throttle_classes
 from rest_framework.response import Response
+from rest_framework.throttling import AnonRateThrottle
 from dataclasses import asdict
+
+_FEEDBACK_API_KEY = os.environ.get("FEEDBACK_API_KEY", "")
+
+
+class FeedbackThrottle(AnonRateThrottle):
+    rate = "20/minute"
 
 from .models import RAGPipeline, RAGQuery, RAGResult
 from .serializers import (
@@ -238,6 +248,7 @@ def proactive_trigger(request):
 
 
 @api_view(["POST"])
+@throttle_classes([FeedbackThrottle])
 def submit_feedback(request):
     """
     Submit feedback for continuous RL.
@@ -255,6 +266,15 @@ def submit_feedback(request):
         "correction": "I meant pump-002"  # Optional correction text
     }
     """
+    # Lightweight API key check (skip if FEEDBACK_API_KEY not configured)
+    if _FEEDBACK_API_KEY:
+        provided_key = request.headers.get("X-Feedback-Key", "")
+        if provided_key != _FEEDBACK_API_KEY:
+            return Response(
+                {"error": "Invalid or missing X-Feedback-Key header"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
     query_id = request.data.get("query_id")
     rating = request.data.get("rating")
     interactions = request.data.get("interactions", [])
@@ -263,6 +283,36 @@ def submit_feedback(request):
     if not query_id:
         return Response(
             {"error": "query_id is required"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # Validate query_id is a UUID
+    try:
+        _uuid.UUID(query_id)
+    except (ValueError, TypeError):
+        return Response(
+            {"error": "query_id must be a valid UUID"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # Validate rating
+    if rating is not None and rating not in ("up", "down"):
+        return Response(
+            {"error": "rating must be 'up' or 'down'"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # Validate correction length
+    if correction and (not isinstance(correction, str) or len(correction) > 500):
+        return Response(
+            {"error": "correction must be a string with max 500 characters"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # Validate interactions
+    if not isinstance(interactions, list) or len(interactions) > 50:
+        return Response(
+            {"error": "interactions must be a list with max 50 items"},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
@@ -313,6 +363,22 @@ def submit_feedback(request):
         )
 
 
+@api_view(["POST"])
+def approve_lora_training(request):
+    """
+    Admin endpoint to approve pending Tier 2 LoRA training.
+
+    POST /api/layer2/approve-training/
+    """
+    from rl.config import TRAINING_DATA_DIR
+
+    TRAINING_DATA_DIR.mkdir(parents=True, exist_ok=True)
+    approval_file = TRAINING_DATA_DIR / "approve_lora_training"
+    approval_file.touch()
+
+    return Response({"status": "approved", "file": str(approval_file)})
+
+
 @api_view(["GET"])
 def rl_status(request):
     """
@@ -331,3 +397,197 @@ def rl_status(request):
             "running": False,
             "error": "RL module not available",
         })
+
+
+# ── In-memory trigger queue for webhook & role_change triggers ──────────────
+import threading
+
+class _TriggerStore:
+    """Thread-safe store for external triggers (webhook, role_change).
+
+    Triggers are pushed via POST /api/layer2/triggers/webhook/ and drained
+    on each GET /api/layer2/triggers/ poll.  Max 100 per kind to prevent
+    unbounded growth.
+    """
+    _MAX_PER_KIND = 100
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._queues: dict[str, list[dict]] = {}
+
+    def push(self, kind: str, trigger: dict):
+        with self._lock:
+            q = self._queues.setdefault(kind, [])
+            q.append(trigger)
+            if len(q) > self._MAX_PER_KIND:
+                q[:] = q[-self._MAX_PER_KIND:]
+
+    def drain(self, kind: str) -> list[dict]:
+        with self._lock:
+            items = self._queues.pop(kind, [])
+        return items
+
+_webhook_trigger_store = _TriggerStore()
+
+
+@api_view(["GET"])
+def system_triggers(request):
+    """
+    Poll for system triggers (per README blueprint):
+      alert_fired, threshold_breach, scheduled_event, role_change, time_of_day, webhook
+
+    GET /api/layer2/triggers/
+    Query params:
+      since — ISO timestamp (only triggers after this time)
+
+    Returns:
+      { "triggers": [...], "timestamp": "..." }
+    """
+    import time as _time
+    from django.utils import timezone
+
+    since_str = request.query_params.get("since")
+    now = timezone.now()
+    triggers = []
+
+    # --- alert_fired: check for recent unacknowledged alerts ---
+    try:
+        from industrial.models import Alert
+        alert_qs = Alert.objects.filter(acknowledged=False).order_by("-timestamp")
+        if since_str:
+            from django.utils.dateparse import parse_datetime
+            since_dt = parse_datetime(since_str)
+            if since_dt:
+                alert_qs = alert_qs.filter(timestamp__gt=since_dt)
+
+        for alert in alert_qs[:5]:
+            triggers.append({
+                "kind": "alert_fired",
+                "source": str(alert.source) if hasattr(alert, "source") else alert.device_name if hasattr(alert, "device_name") else "unknown",
+                "message": alert.message if hasattr(alert, "message") else str(alert),
+                "timestamp": alert.timestamp.isoformat() if hasattr(alert, "timestamp") else now.isoformat(),
+                "payload": {
+                    "severity": alert.severity if hasattr(alert, "severity") else "unknown",
+                    "alert_id": str(alert.pk),
+                },
+            })
+    except Exception:
+        pass  # industrial app may not be migrated
+
+    # --- threshold_breach: check for readings above thresholds ---
+    try:
+        from industrial.models import SensorReading
+        breach_qs = SensorReading.objects.filter(
+            is_anomaly=True
+        ).order_by("-timestamp")[:3]
+        for reading in breach_qs:
+            triggers.append({
+                "kind": "threshold_breach",
+                "source": reading.device_name if hasattr(reading, "device_name") else "sensor",
+                "message": f"Threshold breach: {reading.value} {reading.unit}" if hasattr(reading, "value") else "Threshold breach detected",
+                "timestamp": reading.timestamp.isoformat() if hasattr(reading, "timestamp") else now.isoformat(),
+                "payload": {"reading_id": str(reading.pk)},
+            })
+    except Exception:
+        pass
+
+    # --- scheduled_event: upcoming maintenance within next 24h ---
+    try:
+        from industrial.models import MaintenanceRecord
+        upcoming_qs = MaintenanceRecord.objects.filter(
+            scheduled_date__gte=now,
+            scheduled_date__lte=now + timezone.timedelta(hours=24),
+            completed_at__isnull=True,
+        ).order_by("scheduled_date")[:3]
+        for maint in upcoming_qs:
+            triggers.append({
+                "kind": "scheduled_event",
+                "source": maint.equipment_name if hasattr(maint, "equipment_name") else "maintenance",
+                "message": f"Upcoming: {maint.maintenance_type} maintenance for {maint.equipment_name}",
+                "timestamp": maint.scheduled_date.isoformat() if maint.scheduled_date else now.isoformat(),
+                "payload": {
+                    "record_id": str(maint.pk),
+                    "maintenance_type": maint.maintenance_type,
+                    "equipment": maint.equipment_name,
+                },
+            })
+    except Exception:
+        pass  # industrial app may not have MaintenanceRecord table
+
+    # --- role_change: drain queued role-change triggers ---
+    for rc in _webhook_trigger_store.drain("role_change"):
+        triggers.append(rc)
+
+    # --- time_of_day: shift-based triggers ---
+    hour = now.hour
+    if hour == 6:
+        triggers.append({
+            "kind": "time_of_day",
+            "source": "system",
+            "message": "Morning shift starting — loading shift overview",
+            "timestamp": now.isoformat(),
+            "payload": {"shift": "morning"},
+        })
+    elif hour == 14:
+        triggers.append({
+            "kind": "time_of_day",
+            "source": "system",
+            "message": "Afternoon shift starting — loading shift handover",
+            "timestamp": now.isoformat(),
+            "payload": {"shift": "afternoon"},
+        })
+    elif hour == 22:
+        triggers.append({
+            "kind": "time_of_day",
+            "source": "system",
+            "message": "Night shift starting — loading night monitoring",
+            "timestamp": now.isoformat(),
+            "payload": {"shift": "night"},
+        })
+
+    # --- webhook: drain queued external webhook triggers ---
+    for wh in _webhook_trigger_store.drain("webhook"):
+        triggers.append(wh)
+
+    return Response({
+        "triggers": triggers,
+        "timestamp": now.isoformat(),
+    })
+
+
+@api_view(["POST"])
+def webhook_trigger(request):
+    """
+    Accept external webhook triggers (per README blueprint).
+
+    POST /api/layer2/triggers/webhook/
+    Body: {
+        "kind": "webhook" | "role_change",
+        "source": "external-system-name",
+        "message": "Human-readable description",
+        "payload": { ... optional extra data ... }
+    }
+
+    Triggers are queued and returned on the next GET /api/layer2/triggers/ poll.
+    """
+    from django.utils import timezone
+
+    kind = request.data.get("kind", "webhook")
+    if kind not in ("webhook", "role_change"):
+        return Response({"error": f"Invalid trigger kind: {kind}. Must be 'webhook' or 'role_change'."}, status=400)
+
+    source = request.data.get("source", "external")
+    message = request.data.get("message", "External trigger received")
+    payload = request.data.get("payload", {})
+
+    now = timezone.now()
+    trigger = {
+        "kind": kind,
+        "source": source,
+        "message": message,
+        "timestamp": now.isoformat(),
+        "payload": payload,
+    }
+    _webhook_trigger_store.push(kind, trigger)
+
+    return Response({"status": "queued", "trigger": trigger}, status=201)

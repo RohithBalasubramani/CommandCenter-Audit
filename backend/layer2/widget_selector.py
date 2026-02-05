@@ -38,6 +38,12 @@ BANNED_SCENARIOS = {"helpview", "pulseview"}
 # Maximum instances of the same scenario type
 MAX_SAME_SCENARIO = 2
 
+# Safety-critical scenarios that must maintain minimum visibility
+# These should never be suppressed by RL reranking (e.g., alerts, safety KPIs)
+SAFETY_CRITICAL_SCENARIOS = {"alerts", "kpi"}
+SAFETY_RELEVANCE_FLOOR = 0.7   # Minimum relevance for safety widgets
+SAFETY_MAX_POSITION = 3         # Safety widgets must appear within top N (after hero)
+
 
 SYSTEM_PROMPT = """You are a dashboard widget selector for an industrial operations command center.
 You select the best combination of widgets to build an informative dashboard for the user's query.
@@ -203,10 +209,11 @@ class WidgetPlan:
 
 
 class WidgetSelector:
-    """LLM-based widget selector with rule-based fallback."""
+    """LLM-based widget selector with RL-based reranking."""
 
     def __init__(self):
         self._pipeline = None
+        self._rl_scorer = None
 
     @property
     def pipeline(self):
@@ -214,13 +221,29 @@ class WidgetSelector:
             self._pipeline = get_rag_pipeline()
         return self._pipeline
 
+    @property
+    def rl_scorer(self):
+        """Lazy-load the RL low-rank scorer for widget reranking."""
+        if self._rl_scorer is None:
+            try:
+                if os.getenv("ENABLE_CONTINUOUS_RL", "true").lower() == "true":
+                    from rl.lora_scorer import get_scorer
+                    self._rl_scorer = get_scorer()
+                    logger.info("RL low-rank scorer loaded for widget reranking")
+            except Exception as e:
+                logger.debug(f"RL scorer not available: {e}")
+                self._rl_scorer = False  # Sentinel to avoid retrying
+        return self._rl_scorer if self._rl_scorer is not False else None
+
     def select(self, intent: ParsedIntent, data_summary: str = "",
                user_context: str = "") -> WidgetPlan:
-        """Select widgets using 8B LLM, with fallback to rule-based selection."""
+        """Select widgets using 8B LLM, with RL reranking and rule-based fallback."""
         # Try LLM first
         try:
             result = self._select_with_llm(intent, data_summary, user_context)
             if result is not None and result.widgets:
+                # Apply RL score adjustments from low-rank scorer
+                self._apply_rl_reranking(result, intent)
                 return result
         except Exception as e:
             logger.warning(f"LLM widget selection failed: {e}")
@@ -228,6 +251,65 @@ class WidgetSelector:
         # Fallback to rule-based
         logger.info("Falling back to rule-based widget selection")
         return self._select_with_rules(intent)
+
+    def _apply_rl_reranking(self, plan: "WidgetPlan", intent: ParsedIntent):
+        """
+        Apply RL-learned score adjustments to rerank widgets.
+
+        The low-rank scorer outputs a [-1, 1] adjustment per scenario.
+        We combine this with the LLM's relevance score to produce the
+        final ordering. The first widget (hero) is never demoted.
+        """
+        scorer = self.rl_scorer
+        if scorer is None or not plan.widgets:
+            return
+
+        try:
+            transcript = intent.raw_text
+            scenarios = [w.scenario for w in plan.widgets]
+            adjustments = scorer.score_widgets(transcript, scenarios)
+
+            # Apply adjustments to relevance scores (keep hero in place)
+            for i, widget in enumerate(plan.widgets):
+                adj = adjustments.get(widget.scenario, 0.0)
+                # Blend: 80% LLM relevance + 20% RL adjustment
+                new_relevance = max(0.0, min(1.0,
+                    widget.relevance + 0.2 * adj
+                ))
+
+                # Enforce safety floor for critical widgets
+                if widget.scenario in SAFETY_CRITICAL_SCENARIOS:
+                    if new_relevance < SAFETY_RELEVANCE_FLOOR:
+                        logger.warning(
+                            f"[rl-safety] RL tried to downrank safety widget "
+                            f"'{widget.scenario}' to {new_relevance:.2f} "
+                            f"(adj={adj:.2f}), clamping to floor {SAFETY_RELEVANCE_FLOOR}"
+                        )
+                        new_relevance = max(new_relevance, SAFETY_RELEVANCE_FLOOR)
+
+                widget.relevance = new_relevance
+
+            # Re-sort by adjusted relevance (but keep hero/first widget fixed)
+            if len(plan.widgets) > 2:
+                hero = plan.widgets[0]
+                rest = sorted(plan.widgets[1:], key=lambda w: w.relevance, reverse=True)
+
+                # Enforce position constraint: safety widgets within top SAFETY_MAX_POSITION
+                for idx, w in list(enumerate(rest)):
+                    if (w.scenario in SAFETY_CRITICAL_SCENARIOS
+                            and idx >= SAFETY_MAX_POSITION):
+                        rest.remove(w)
+                        insert_at = min(SAFETY_MAX_POSITION - 1, len(rest))
+                        rest.insert(insert_at, w)
+                        logger.warning(
+                            f"[rl-safety] Promoted safety widget '{w.scenario}' "
+                            f"from position {idx + 2} to {insert_at + 2}"
+                        )
+
+                plan.widgets = [hero] + rest
+
+        except Exception as e:
+            logger.debug(f"RL reranking skipped: {e}")
 
     def _select_with_llm(self, intent: ParsedIntent, data_summary: str,
                           user_context: str) -> Optional[WidgetPlan]:

@@ -131,6 +131,13 @@ export type WidgetDomain =
   | "messaging"
   | "reporting";
 
+export interface WidgetLifecycle {
+  onMount?: () => void;
+  onUnmount?: () => void;
+  onResize?: (width: number, height: number) => void;
+  onDataUpdate?: (data: Record<string, unknown>) => void;
+}
+
 export interface WidgetContract {
   id: string;
   domain: WidgetDomain;
@@ -138,6 +145,7 @@ export interface WidgetContract {
   minSize: { width: number; height: number };
   maxSize: { width: number; height: number };
   priority: number;
+  lifecycle?: WidgetLifecycle;
 }
 
 // --- Event System ---
@@ -150,6 +158,26 @@ export interface LayoutSnapshot {
   heading: string;
   layout: LayoutJSON;
   label?: string;
+}
+
+/**
+ * System trigger types (per README blueprint):
+ *   alert_fired, threshold_breach, scheduled_event, role_change, time_of_day, webhook
+ */
+export type SystemTriggerKind =
+  | "alert_fired"
+  | "threshold_breach"
+  | "scheduled_event"
+  | "role_change"
+  | "time_of_day"
+  | "webhook";
+
+export interface SystemTrigger {
+  kind: SystemTriggerKind;
+  source: string;
+  message: string;
+  timestamp: number;
+  payload?: Record<string, unknown>;
 }
 
 export type CommandCenterEvent =
@@ -166,4 +194,5 @@ export type CommandCenterEvent =
   | { type: "WIDGET_RESIZE"; widgetKey: string; size: WidgetSize }
   | { type: "WIDGET_FOCUS"; scenario: string; label: string }
   | { type: "WIDGET_DRILL_DOWN"; scenario: string; label: string; context: string }
-  | { type: "WIDGET_SNAPSHOT" };
+  | { type: "WIDGET_SNAPSHOT" }
+  | { type: "SYSTEM_TRIGGER"; trigger: SystemTrigger };

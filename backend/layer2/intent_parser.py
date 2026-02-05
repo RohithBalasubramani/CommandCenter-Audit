@@ -127,18 +127,36 @@ class IntentParser:
         return self._pipeline
 
     def parse(self, transcript: str) -> ParsedIntent:
-        """Parse intent from transcript using 8B LLM, with regex fallback."""
-        # Try LLM first
+        """Parse intent from transcript using 8B LLM, with regex fallback.
+
+        Strategy:
+        1. Regex first for deterministic classification of greetings and
+           out-of-scope queries (LLM is unreliable for these simple patterns).
+        2. LLM for complex queries — enriched with any regex-detected domains
+           the LLM may have missed.
+        3. Pure regex fallback if LLM is unavailable.
+        """
+        # Always run regex first — it's fast and deterministic
+        regex_result = self._parse_with_regex(transcript)
+
+        # Fast path: greetings and out-of-scope are pattern-matched reliably
+        if regex_result.type in ("greeting", "out_of_scope"):
+            return regex_result
+
+        # Complex queries: try LLM for richer entity extraction and confidence
         try:
             result = self._parse_with_llm(transcript)
             if result is not None:
+                # Merge regex-detected domains the LLM may have missed
+                for domain in regex_result.domains:
+                    if domain not in result.domains:
+                        result.domains.append(domain)
                 return result
         except Exception as e:
             logger.warning(f"LLM intent parsing failed: {e}")
 
         # Fallback to regex
-        logger.info("Falling back to regex intent parsing")
-        return self._parse_with_regex(transcript)
+        return regex_result
 
     def _parse_with_llm(self, transcript: str) -> Optional[ParsedIntent]:
         """Parse intent using the fast LLM model."""

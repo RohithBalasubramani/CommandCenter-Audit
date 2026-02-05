@@ -32,5 +32,25 @@ class Layer2Config(AppConfig):
                 fixture_selector=getattr(orchestrator, 'fixture_selector', None),
             )
             logger.info("Continuous RL system initialized successfully")
+
+            # Preload embedding model to avoid cold-start latency on first request
+            self._preload_embedding_model()
         except Exception as e:
             logger.warning(f"Failed to initialize RL system: {e}")
+
+    def _preload_embedding_model(self):
+        """Preload the sentence-transformers embedding model used by the scorer."""
+        import threading
+
+        def _load():
+            try:
+                from rl.lora_scorer import get_scorer
+                scorer = get_scorer()
+                # Trigger lazy-load of the embedding model with a dummy encode
+                scorer._get_embedding("warmup")
+                logger.info("Embedding model preloaded for scorer")
+            except Exception as e:
+                logger.warning(f"Failed to preload embedding model: {e}")
+
+        # Run in background thread so it doesn't block startup
+        threading.Thread(target=_load, daemon=True, name="embedding-preload").start()
