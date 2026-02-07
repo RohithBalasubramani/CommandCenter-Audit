@@ -1,0 +1,149 @@
+{
+  "scenarioId": "cc-query-001",
+  "scenarioName": "Simple Equipment Query",
+  "status": "pass",
+  "duration": 120110,
+  "actionCount": 7,
+  "actionLog": [
+    {
+      "step": 1,
+      "timestamp": "2026-02-07T13:17:24.655Z",
+      "action": {
+        "progress": "Page loaded with widgets already visible, but task requires submitting a specific query",
+        "blocker": "none",
+        "expectedSignal": "Text input overlay should appear on screen",
+        "confidence": 0.9,
+        "type": "key",
+        "reasoning": "Opening text input with Ctrl+Shift+K shortcut to type the pump status query",
+        "key": "Control+Shift+K"
+      },
+      "result": "success",
+      "duration": 14676,
+      "screenshotAfter": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/screenshots/002-step-001-key.png"
+    },
+    {
+      "step": 2,
+      "timestamp": "2026-02-07T13:17:40.907Z",
+      "action": {
+        "progress": "Text input overlay successfully opened with placeholder 'Ask anything...' and Send button visible",
+        "blocker": "none",
+        "expectedSignal": "Text should appear in the input field as I type",
+        "confidence": 0.95,
+        "type": "type",
+        "reasoning": "Typing the required query 'Show pump status' into the text input field",
+        "target": {
+          "placeholder": "Ask anything..."
+        },
+        "value": "Show pump status"
+      },
+      "result": "success",
+      "duration": 14748,
+      "screenshotAfter": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/screenshots/003-step-002-type.png"
+    },
+    {
+      "step": 3,
+      "timestamp": "2026-02-07T13:17:51.379Z",
+      "action": {
+        "progress": "Successfully typed 'Show pump status' into the text input field, text is visible in the overlay",
+        "blocker": "none",
+        "expectedSignal": "Text input overlay should close and widget cards should appear in the grid",
+        "confidence": 0.95,
+        "type": "click",
+        "reasoning": "Clicking the blue Send button to submit the query and trigger widget rendering",
+        "target": {
+          "role": "button",
+          "name": "Send"
+        }
+      },
+      "result": "success",
+      "duration": 8969,
+      "screenshotAfter": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/screenshots/004-step-003-click.png"
+    },
+    {
+      "step": 4,
+      "timestamp": "2026-02-07T13:18:16.254Z",
+      "action": {
+        "progress": "Submitted query but no visible change - overlay still open, no widgets appeared",
+        "blocker": "Send button clicked but query didn't submit - possible UI bug or need different interaction",
+        "expectedSignal": "Input overlay should close and widget grid should update with pump status cards",
+        "confidence": 0.7,
+        "type": "key",
+        "reasoning": "Send button click didn't work - trying Enter key to submit the query as mentioned in tips",
+        "key": "Enter"
+      },
+      "result": "success",
+      "duration": 23372,
+      "screenshotAfter": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/screenshots/005-step-004-key.png"
+    },
+    {
+      "step": 5,
+      "timestamp": "2026-02-07T13:18:23.571Z",
+      "action": {
+        "progress": "Query submitted successfully! Page title changed to 'Pump Status Overview' and error message shows '92.4' - this indicates the system processed the request",
+        "blocker": "none",
+        "expectedSignal": "Widget cards should now be visible in the grid area",
+        "confidence": 0.85,
+        "type": "screenshot",
+        "reasoning": "Taking screenshot to verify if widget cards are visible on screen after successful query submission"
+      },
+      "result": "success",
+      "duration": 5814,
+      "screenshotAfter": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/screenshots/007-step-005-screenshot.png"
+    },
+    {
+      "step": 6,
+      "timestamp": "2026-02-07T13:18:38.107Z",
+      "action": {
+        "type": "verify",
+        "reasoning": "Need visible proof before done for: At least one widget rendered",
+        "progress": "SUCCESS! Multiple widgets are now visible on screen: 1) Live Load chart at top, 2) CORE TEMP KPI card showing 92.4°C, 3) MAIN PUMP A status card showing Operational, 4) Power Factor alert card at bottom",
+        "blocker": "Missing visible evidence for At least one widget rendered",
+        "expectedSignal": "least",
+        "confidence": 0.55,
+        "assertion": {
+          "check": "text_contains",
+          "expected": "least"
+        }
+      },
+      "result": "failed",
+      "error": "Unknown action type: verify",
+      "duration": 13032,
+      "screenshotAfter": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/screenshots/008-step-006-verify.png"
+    },
+    {
+      "step": 7,
+      "timestamp": "2026-02-07T13:19:04.682Z",
+      "action": {
+        "progress": "Query successfully submitted - page title is 'Pump Status Overview' and multiple widget cards are visible including CORE TEMP (92.4°C), MAIN PUMP A (Operational), Live Load chart, and Power Factor alert",
+        "blocker": "none",
+        "expectedSignal": "Task complete - widgets rendered and visible",
+        "confidence": 1,
+        "type": "done",
+        "reasoning": "TASK COMPLETE: At least one widget card is now rendered and visible on screen after submitting 'Show pump status' query. Multiple widgets are displayed including KPI cards, status cards, charts, and alerts."
+      },
+      "result": "success",
+      "duration": 25071
+    }
+  ],
+  "criteriaResults": [
+    {
+      "description": "At least one widget rendered",
+      "passed": true,
+      "actual": "true"
+    }
+  ],
+  "backendResults": [
+    {
+      "description": "Orchestrate endpoint returns layout_json",
+      "passed": true,
+      "endpoint": "http://localhost:8100/api/layer2/orchestrate/",
+      "status": 200,
+      "responsePreview": "{\"query_id\":\"65155c14-eb34-461a-99eb-e64175a61fa3\",\"voice_response\":\"The \\\"Pump Status Overview\\\" dashboard shows the current status of our pumps, with Sump Pump Pump 5 and Sump Pump Pump 4 currently running at 100 m³/hr and 150 m³/hr respectively. Sump Pump Pump 1 is offline, with a health score of"
+    }
+  ],
+  "evidence": {
+    "screenshots": [],
+    "networkCaptures": [],
+    "llmDecisions": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/cc-query-001-llm-conversation.json"
+  }
+}

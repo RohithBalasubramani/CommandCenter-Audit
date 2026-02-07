@@ -1,0 +1,91 @@
+{
+  "scenarioId": "cc-voice-001",
+  "scenarioName": "Voice Control Bar Visibility",
+  "status": "pass",
+  "duration": 66681,
+  "actionCount": 4,
+  "actionLog": [
+    {
+      "step": 1,
+      "timestamp": "2026-02-07T14:34:42.292Z",
+      "action": {
+        "type": "verify",
+        "reasoning": "Need visible proof before done for: PTT button visible",
+        "progress": "Voice control bar is fully visible at the bottom with all required elements",
+        "blocker": "Missing visible evidence for PTT button visible",
+        "expectedSignal": "button",
+        "confidence": 0.55,
+        "assertion": {
+          "check": "text_contains",
+          "expected": "button"
+        }
+      },
+      "result": "failed",
+      "error": "Unknown action type: verify",
+      "duration": 12362,
+      "screenshotAfter": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/screenshots/002-step-001-verify.png"
+    },
+    {
+      "step": 2,
+      "timestamp": "2026-02-07T14:34:53.742Z",
+      "action": {
+        "type": "verify",
+        "reasoning": "Need visible proof before done for: PTT button visible",
+        "progress": "Voice control bar is visible at the bottom with microphone button, label text, and PTT button",
+        "blocker": "Missing visible evidence for PTT button visible",
+        "expectedSignal": "button",
+        "confidence": 0.55,
+        "assertion": {
+          "check": "text_contains",
+          "expected": "button"
+        }
+      },
+      "result": "failed",
+      "error": "Unknown action type: verify",
+      "duration": 9945,
+      "screenshotAfter": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/screenshots/003-step-002-verify.png"
+    },
+    {
+      "step": 3,
+      "timestamp": "2026-02-07T14:35:15.148Z",
+      "action": {
+        "progress": "No progress yet - need to see what's currently on screen",
+        "blocker": "Haven't viewed the screenshot yet to see if PTT button is visible",
+        "expectedSignal": "Will be able to see the dashboard and voice control bar in the screenshot",
+        "confidence": 0.9,
+        "type": "screenshot",
+        "reasoning": "Need to view the current screen to see if the PTT button is already visible in the voice control bar at the bottom"
+      },
+      "result": "success",
+      "duration": 19901,
+      "screenshotAfter": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/screenshots/005-step-003-screenshot.png"
+    },
+    {
+      "step": 4,
+      "timestamp": "2026-02-07T14:35:31.362Z",
+      "action": {
+        "progress": "Screenshot taken and reviewed - I can now see the dashboard with the voice control bar at the bottom containing a microphone button, 'Hold Shift+Space to speak' label, and a PTT button",
+        "blocker": "none",
+        "expectedSignal": "Task completion confirmation",
+        "confidence": 1,
+        "type": "done",
+        "reasoning": "The goal progress shows 1/1 outcomes done, meaning the PTT button is visible. I have verified through the screenshot that all required elements are present: the voice control bar at the bottom with microphone button, label text, and PTT button. The task is complete."
+      },
+      "result": "success",
+      "duration": 14710
+    }
+  ],
+  "criteriaResults": [
+    {
+      "description": "PTT button visible",
+      "passed": true,
+      "actual": "true"
+    }
+  ],
+  "backendResults": [],
+  "evidence": {
+    "screenshots": [],
+    "networkCaptures": [],
+    "llmDecisions": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/cc-voice-001-llm-conversation.json"
+  }
+}

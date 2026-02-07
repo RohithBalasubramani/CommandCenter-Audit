@@ -159,11 +159,11 @@ export class CommandCenterPage {
   // ── Layout and Widgets ──
 
   async waitForLayout(timeout = 30000) {
-    // Wait for layout update
-    await this.page.waitForSelector('[data-testid="blob-grid"]', { timeout }).catch(() => {
-      // Fallback: wait for any grid container
-      return this.page.waitForSelector('.grid', { timeout });
-    });
+    // Wait for layout grid — race both selectors so neither blocks the other
+    await Promise.race([
+      this.page.waitForSelector('[data-testid="blob-grid"]', { timeout }),
+      this.page.waitForSelector('.grid', { timeout }),
+    ]);
   }
 
   async waitForWidgets(minCount = 1, timeout = 60000) {
@@ -181,8 +181,8 @@ export class CommandCenterPage {
   async getWidgets(): Promise<WidgetInfo[]> {
     const widgets: WidgetInfo[] = [];
 
-    // Find all widget slots
-    const widgetSlots = await this.page.locator('[data-testid^="widget-"]').all();
+    // Primary: find widgets by data-scenario attribute (set by Blob.tsx / WidgetSlot.tsx)
+    const widgetSlots = await this.page.locator('[data-scenario]').all();
 
     for (const slot of widgetSlots) {
       const scenario = await slot.getAttribute('data-scenario') || 'unknown';
@@ -192,17 +192,20 @@ export class CommandCenterPage {
       widgets.push({ scenario, fixture, size, element: slot });
     }
 
-    // Fallback: look for common widget patterns
-    if (widgets.length === 0) {
-      const containers = await this.page.locator('.widget-container, [class*="widget"]').all();
-      for (const container of containers) {
-        widgets.push({
-          scenario: 'unknown',
-          fixture: 'unknown',
-          size: 'normal',
-          element: container
-        });
+    // Deduplicate: Blob.tsx and WidgetSlot.tsx both set data-scenario (parent + child),
+    // keep only the innermost (child) elements to avoid double-counting
+    if (widgets.length > 0) {
+      const seen = new Set<string>();
+      const deduped: WidgetInfo[] = [];
+      // Reverse so innermost elements (later in DOM order for nested) take priority
+      for (const w of widgets) {
+        const key = `${w.scenario}-${w.size}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          deduped.push(w);
+        }
       }
+      return deduped;
     }
 
     return widgets;
@@ -244,7 +247,7 @@ export class CommandCenterPage {
 
   async getPerformanceMetrics(): Promise<PerformanceMetrics> {
     const metrics = await this.page.evaluate(() => {
-      const widgets = document.querySelectorAll('[data-testid^="widget-"], .widget-container');
+      const widgets = document.querySelectorAll('[data-scenario]');
 
       // Get memory if available
       let memoryUsage: number | undefined;

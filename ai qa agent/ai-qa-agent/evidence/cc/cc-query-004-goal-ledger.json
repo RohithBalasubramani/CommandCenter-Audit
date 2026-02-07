@@ -1,0 +1,11 @@
+{
+  "goal": "Submit \"Show key metrics overview\" and verify KPI-type widgets appear with numeric values.",
+  "requiredOutcomes": [
+    "Widget rendered"
+  ],
+  "completedOutcomes": [
+    "Widget rendered"
+  ],
+  "stuckScore": 5,
+  "stepsSinceProgress": 2
+}

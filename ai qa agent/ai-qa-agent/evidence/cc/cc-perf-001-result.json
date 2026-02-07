@@ -1,0 +1,102 @@
+{
+  "scenarioId": "cc-perf-001",
+  "scenarioName": "Layout Render Performance",
+  "status": "pass",
+  "duration": 100093,
+  "actionCount": 5,
+  "actionLog": [
+    {
+      "step": 1,
+      "timestamp": "2026-02-07T14:16:44.955Z",
+      "action": {
+        "progress": "Initial page loaded with default widgets visible",
+        "blocker": "none",
+        "expectedSignal": "Text input overlay should appear for typing the query",
+        "confidence": 0.85,
+        "type": "key",
+        "reasoning": "Pressing Ctrl+Shift+K to open text input overlay as instructed in the tips",
+        "key": "Ctrl+Shift+K"
+      },
+      "result": "failed",
+      "error": "keyboard.press: Unknown key: \"Ctrl\"",
+      "duration": 14084,
+      "screenshotAfter": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/screenshots/002-step-001-key.png"
+    },
+    {
+      "step": 2,
+      "timestamp": "2026-02-07T14:16:59.357Z",
+      "action": {
+        "progress": "Initial dashboard loaded with default widgets visible",
+        "blocker": "none",
+        "expectedSignal": "Text input overlay should appear for typing the query",
+        "confidence": 0.9,
+        "type": "click",
+        "reasoning": "Clicking the keyboard icon button in the floating toolbar to open text input",
+        "target": {
+          "role": "button",
+          "name": "Text input (Ctrl+Shift+K)"
+        }
+      },
+      "result": "success",
+      "duration": 12899,
+      "screenshotAfter": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/screenshots/003-step-002-click.png"
+    },
+    {
+      "step": 3,
+      "timestamp": "2026-02-07T14:17:07.061Z",
+      "action": {
+        "progress": "Text input overlay opened successfully",
+        "blocker": "Elements list shows 0 elements, but screenshot should show the input field",
+        "expectedSignal": "The input field should accept my text and I can type the query",
+        "confidence": 0.7,
+        "type": "screenshot",
+        "reasoning": "Need to view the screenshot to see the actual text input field that should now be visible"
+      },
+      "result": "success",
+      "duration": 6200,
+      "screenshotAfter": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/screenshots/005-step-003-screenshot.png"
+    },
+    {
+      "step": 4,
+      "timestamp": "2026-02-07T14:17:28.548Z",
+      "action": {
+        "progress": "Text input overlay opened after clicking the button, but Elements list shows 0 items which suggests the page might not be fully loaded or the input field isn't being detected",
+        "blocker": "Elements list is empty - cannot see any input fields or buttons to interact with. Need to view the screenshot to understand what's actually on screen",
+        "expectedSignal": "Should see a text input field where I can type 'Show equipment overview'",
+        "confidence": 0.6,
+        "type": "wait",
+        "reasoning": "Waiting for the text input overlay to fully render and become interactive, since the Elements list is empty but the action succeeded"
+      },
+      "result": "success",
+      "duration": 19983,
+      "screenshotAfter": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/screenshots/006-step-004-wait.png"
+    },
+    {
+      "step": 5,
+      "timestamp": "2026-02-07T14:18:05.745Z",
+      "action": {
+        "progress": "Text input button was clicked and succeeded, but Elements list remains empty for 5 steps. This suggests either the page isn't detecting interactive elements or there's a rendering issue.",
+        "blocker": "Elements list has been empty for all 5 steps - cannot see any input fields, buttons, or interactive elements to continue the task. Need to view screenshot to understand actual screen state.",
+        "expectedSignal": "Should see visible widgets or UI elements on the dashboard",
+        "confidence": 0.4,
+        "type": "done",
+        "reasoning": "STUCK: After clicking 'Text input' button successfully, the Elements list remains completely empty for 5 consecutive steps. Without any visible elements to interact with (no input field, no send button, no widgets), I cannot proceed with typing 'Show equipment overview' or verifying widget rendering. The empty Elements list suggests either a page rendering failure or element detection failure that prevents further interaction."
+      },
+      "result": "success",
+      "duration": 35693
+    }
+  ],
+  "criteriaResults": [
+    {
+      "description": "Widgets rendered",
+      "passed": true,
+      "actual": "true"
+    }
+  ],
+  "backendResults": [],
+  "evidence": {
+    "screenshots": [],
+    "networkCaptures": [],
+    "llmDecisions": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/cc-perf-001-llm-conversation.json"
+  }
+}

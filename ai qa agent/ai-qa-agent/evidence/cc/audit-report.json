@@ -1,0 +1,108 @@
+{
+  "timestamp": "2026-02-07T14:39:47.790Z",
+  "appName": "Command Center",
+  "appVersion": "1.0.0",
+  "totalScenarios": 1,
+  "passed": 1,
+  "failed": 0,
+  "errors": 0,
+  "timeouts": 0,
+  "skipped": 0,
+  "totalDuration": 50611,
+  "totalActions": 3,
+  "passRate": 100,
+  "scenarios": [
+    {
+      "scenarioId": "cc-voice-003",
+      "scenarioName": "STT/TTS Status Indicators",
+      "status": "pass",
+      "duration": 50611,
+      "actionCount": 3,
+      "actionLog": [
+        {
+          "step": 1,
+          "timestamp": "2026-02-07T14:39:16.364Z",
+          "action": {
+            "type": "verify",
+            "reasoning": "Need visible proof before done for: Voice control area visible",
+            "progress": "Voice control bar is visible at the bottom with green status indicators",
+            "blocker": "Missing visible evidence for Voice control area visible",
+            "expectedSignal": "voice",
+            "confidence": 0.55,
+            "assertion": {
+              "check": "text_contains",
+              "expected": "voice"
+            }
+          },
+          "result": "failed",
+          "error": "Unknown action type: verify",
+          "duration": 14329,
+          "screenshotAfter": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/screenshots/002-step-001-verify.png"
+        },
+        {
+          "step": 2,
+          "timestamp": "2026-02-07T14:39:29.897Z",
+          "action": {
+            "type": "verify",
+            "reasoning": "Need visible proof before done for: Voice control area visible",
+            "progress": "Voice control bar is visible at the bottom with two green status indicator dots next to PTT label",
+            "blocker": "Missing visible evidence for Voice control area visible",
+            "expectedSignal": "voice",
+            "confidence": 0.55,
+            "assertion": {
+              "check": "text_contains",
+              "expected": "voice"
+            }
+          },
+          "result": "failed",
+          "error": "Unknown action type: verify",
+          "duration": 12028,
+          "screenshotAfter": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/screenshots/003-step-002-verify.png"
+        },
+        {
+          "step": 3,
+          "timestamp": "2026-02-07T14:39:47.445Z",
+          "action": {
+            "progress": "I can see the voice control bar at the bottom of the dashboard with green status indicators next to the PTT button",
+            "blocker": "none",
+            "expectedSignal": "Task completion confirmation",
+            "confidence": 0.95,
+            "type": "done",
+            "reasoning": "The voice control area is clearly visible at the bottom of the screen with green status dots indicating STT and TTS are connected. The task requirement of verifying the voice control bar status indicators are visible has been met."
+          },
+          "result": "success",
+          "duration": 16043
+        }
+      ],
+      "criteriaResults": [
+        {
+          "description": "Voice control area visible",
+          "passed": true,
+          "actual": "true"
+        }
+      ],
+      "backendResults": [],
+      "evidence": {
+        "screenshots": [],
+        "networkCaptures": [],
+        "llmDecisions": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/cc-voice-003-llm-conversation.json"
+      },
+      "attempt": 1
+    }
+  ],
+  "failureBreakdown": {
+    "element_not_found": 0,
+    "element_not_interactable": 0,
+    "navigation_error": 0,
+    "form_error": 0,
+    "timeout": 0,
+    "stuck_loop": 0,
+    "assertion_failed": 0,
+    "browser_crash": 0,
+    "llm_error": 0,
+    "network_error": 0,
+    "auth_error": 0,
+    "unknown": 0
+  },
+  "summary": "AI Agent Audit Report: Command Center\n═════════════════════\nTotal Scenarios: 1\nPassed: 1 | Failed: 0 | Errors: 0 | Timeouts: 0 | Skipped: 0\nPass Rate: 100%\nTotal Actions: 3\nTotal Duration: 51s\n\n✓ [PASS] STT/TTS Status Indicators (3 actions, 51s)"
+}

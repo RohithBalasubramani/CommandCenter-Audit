@@ -1,0 +1,11 @@
+{
+  "goal": "Submit \"What is the weather in Tokyo?\" and verify the system rejects it as out of scope. The response should indicate this is not an industrial query.",
+  "requiredOutcomes": [
+    "Page still functional"
+  ],
+  "completedOutcomes": [
+    "Page still functional"
+  ],
+  "stuckScore": 10,
+  "stepsSinceProgress": 7
+}

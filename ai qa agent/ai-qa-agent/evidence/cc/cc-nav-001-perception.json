@@ -1,0 +1,11 @@
+[
+  {
+    "step": 1,
+    "url": "http://localhost:3100/",
+    "screenSummary": "Operations Dashboard — 0 elements",
+    "visibleCTAs": [],
+    "confidence": 0.9,
+    "confusionSignals": [],
+    "progressMade": true
+  }
+]

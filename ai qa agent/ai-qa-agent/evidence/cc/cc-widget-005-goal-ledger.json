@@ -1,0 +1,11 @@
+{
+  "goal": "Submit \"Show pump status\" to get widgets. Hover over a widget card and verify that the floating toolbar with action buttons becomes visible.",
+  "requiredOutcomes": [
+    "Widget visible"
+  ],
+  "completedOutcomes": [
+    "Widget visible"
+  ],
+  "stuckScore": 4,
+  "stepsSinceProgress": 1
+}

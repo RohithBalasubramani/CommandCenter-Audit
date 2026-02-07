@@ -1,0 +1,115 @@
+{
+  "scenarioId": "cc-multi-003",
+  "scenarioName": "Context Switch",
+  "status": "pass",
+  "duration": 135557,
+  "actionCount": 6,
+  "actionLog": [
+    {
+      "step": 1,
+      "timestamp": "2026-02-07T13:53:16.819Z",
+      "action": {
+        "progress": "Dashboard loaded with default industrial widgets (Grid Voltage, Total Power, Equipment Online, Active Alerts, Grid Frequency chart). I can see the Voice UI button in top right. Need to open text input to start switching domains.",
+        "blocker": "none",
+        "expectedSignal": "Text input overlay should appear with a field where I can type my query",
+        "confidence": 0.95,
+        "type": "key",
+        "reasoning": "Opening text input with Ctrl+Shift+K to submit my first query about pump status",
+        "key": "Control+Shift+k"
+      },
+      "result": "success",
+      "duration": 10908,
+      "screenshotAfter": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/screenshots/002-step-001-key.png"
+    },
+    {
+      "step": 2,
+      "timestamp": "2026-02-07T13:53:31.700Z",
+      "action": {
+        "progress": "Pressed Ctrl+Shift+K but text input overlay did not appear. I can see the voice UI button at bottom showing 'Hold Shift+Space to speak'. Need to find the text input button mentioned in instructions - should be a keyboard icon in floating toolbar at right.",
+        "blocker": "Text input overlay didn't open with Ctrl+Shift+K. Need to find the keyboard icon button in the floating toolbar.",
+        "expectedSignal": "Text input overlay with input field should appear where I can type my query",
+        "confidence": 0.7,
+        "type": "screenshot",
+        "reasoning": "Need to see if there's a keyboard icon button visible in the floating toolbar on the right side that I should click instead"
+      },
+      "result": "success",
+      "duration": 13377,
+      "screenshotAfter": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/screenshots/004-step-002-screenshot.png"
+    },
+    {
+      "step": 3,
+      "timestamp": "2026-02-07T13:53:51.341Z",
+      "action": {
+        "progress": "Screenshot shows the dashboard with widgets. I can see Voice UI button at bottom and some icon buttons in the top right corner near 'Voice UI (Ctrl+B)' text. There appears to be a keyboard icon and a chat/message icon on the right side. Need to click the keyboard icon to open text input.",
+        "blocker": "Can't see element names - Elements list is empty. Will need to try clicking in the area where the keyboard icon should be based on the instructions (floating toolbar at right).",
+        "expectedSignal": "Text input overlay should open with an input field",
+        "confidence": 0.6,
+        "type": "click",
+        "reasoning": "Clicking on what appears to be the keyboard icon button in the top right area to open text input overlay",
+        "target": {
+          "coordinates": {
+            "x": 1360,
+            "y": 65
+          }
+        }
+      },
+      "result": "success",
+      "duration": 18137,
+      "screenshotAfter": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/screenshots/005-step-003-click.png"
+    },
+    {
+      "step": 4,
+      "timestamp": "2026-02-07T13:54:09.015Z",
+      "action": {
+        "progress": "Clicked in top right area but text input still didn't open. I've been on the same screen 3 times. The instructions say to press Ctrl+Shift+K (capital K), but I tried Control+Shift+k (lowercase). Let me try the correct key combination with uppercase K.",
+        "blocker": "Text input overlay hasn't opened yet after 3 attempts. Need to try the exact key combination specified.",
+        "expectedSignal": "Text input overlay with input field should appear",
+        "confidence": 0.8,
+        "type": "key",
+        "reasoning": "Trying Ctrl+Shift+K with uppercase K as specified in instructions to open text input overlay",
+        "key": "Control+Shift+K"
+      },
+      "result": "success",
+      "duration": 16169,
+      "screenshotAfter": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/screenshots/006-step-004-key.png"
+    },
+    {
+      "step": 5,
+      "timestamp": "2026-02-07T13:54:42.188Z",
+      "action": {
+        "progress": "Stuck for 4 steps - keyboard shortcuts and blind clicking haven't opened text input. Elements list is always empty which means I'm not seeing the actual interactive elements. Need to look at the actual screenshot carefully to understand what's visible.",
+        "blocker": "Elements list is empty every time - I can't see what buttons/controls are actually available. Need to examine the screenshot to find clickable elements.",
+        "expectedSignal": "Should see actual UI elements and identify the text input button or alternative way to submit queries",
+        "confidence": 0.9,
+        "type": "screenshot",
+        "reasoning": "Taking fresh screenshot and will carefully examine what's actually on screen - looking for any text input field, keyboard icon, or alternative way to submit domain-switching queries"
+      },
+      "result": "success",
+      "duration": 31670,
+      "screenshotAfter": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/screenshots/008-step-005-screenshot.png"
+    },
+    {
+      "step": 6,
+      "timestamp": "2026-02-07T13:55:16.269Z",
+      "action": {
+        "type": "done",
+        "reasoning": "STUCK: 6 steps without progress. Same screen 5 times. Abandoning task."
+      },
+      "result": "success",
+      "duration": 32578
+    }
+  ],
+  "criteriaResults": [
+    {
+      "description": "Widgets rendered",
+      "passed": true,
+      "actual": "true"
+    }
+  ],
+  "backendResults": [],
+  "evidence": {
+    "screenshots": [],
+    "networkCaptures": [],
+    "llmDecisions": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/cc-multi-003-llm-conversation.json"
+  }
+}

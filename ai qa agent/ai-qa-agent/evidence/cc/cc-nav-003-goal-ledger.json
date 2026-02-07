@@ -1,0 +1,11 @@
+{
+  "goal": "Open the text input overlay by clicking the keyboard icon button labeled \"Text input (Ctrl+Shift+K)\", verify the input field appears with placeholder \"Ask anything...\", then press Escape to close it.",
+  "requiredOutcomes": [
+    "Page is interactive"
+  ],
+  "completedOutcomes": [
+    "Page is interactive"
+  ],
+  "stuckScore": 3,
+  "stepsSinceProgress": 5
+}

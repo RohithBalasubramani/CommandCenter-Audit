@@ -1,0 +1,11 @@
+{
+  "goal": "First submit \"Show pump status\" to get widgets. Then click on a widget card body (the clickable area with cursor-pointer) to trigger a drill-down or focus action.",
+  "requiredOutcomes": [
+    "Widget visible after query"
+  ],
+  "completedOutcomes": [
+    "Widget visible after query"
+  ],
+  "stuckScore": 2,
+  "stepsSinceProgress": 4
+}

@@ -1,0 +1,11 @@
+{
+  "goal": "Submit \"Show pump status\" to get widgets. Hover over a widget and click the \"Focus — ask AI about this\" button. Verify the system processes a follow-up query about the widget.",
+  "requiredOutcomes": [
+    "Widget visible"
+  ],
+  "completedOutcomes": [
+    "Widget visible"
+  ],
+  "stuckScore": 5,
+  "stepsSinceProgress": 6
+}

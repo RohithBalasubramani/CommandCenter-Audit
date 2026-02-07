@@ -1,0 +1,9 @@
+{
+  "goal": "Open text input overlay, verify the Send button is disabled when the input is empty, then type \"test\" and verify the button becomes enabled.",
+  "requiredOutcomes": [
+    "Page functional"
+  ],
+  "completedOutcomes": [],
+  "stuckScore": 9,
+  "stepsSinceProgress": 6
+}

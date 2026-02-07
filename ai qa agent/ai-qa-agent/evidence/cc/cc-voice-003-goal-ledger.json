@@ -1,0 +1,11 @@
+{
+  "goal": "Verify the voice control bar status indicators are visible at the bottom of the dashboard. They appear as colored dots (green=connected, red=disconnected) next to the PTT button, indicating STT and TTS server status.",
+  "requiredOutcomes": [
+    "Voice control area visible"
+  ],
+  "completedOutcomes": [
+    "Voice control area visible"
+  ],
+  "stuckScore": 2,
+  "stepsSinceProgress": 5
+}

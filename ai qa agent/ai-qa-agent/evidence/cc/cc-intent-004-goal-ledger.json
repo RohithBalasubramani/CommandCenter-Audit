@@ -1,0 +1,11 @@
+{
+  "goal": "Submit \"Create a work order for pump 1 maintenance\" and verify the system recognizes this as an action intent.",
+  "requiredOutcomes": [
+    "Page still functional"
+  ],
+  "completedOutcomes": [
+    "Page still functional"
+  ],
+  "stuckScore": 0,
+  "stepsSinceProgress": 2
+}

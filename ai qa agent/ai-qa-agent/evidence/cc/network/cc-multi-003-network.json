@@ -1,0 +1,10 @@
+[
+  {
+    "method": "GET",
+    "url": "http://localhost:8100/api/layer2/triggers/?since=2026-02-07T13%3A54%3A34.358852%2B00%3A00",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"triggers\":[],\"timestamp\":\"2026-02-07T13:55:04.360397+00:00\"}",
+    "contentType": "application/json"
+  }
+]

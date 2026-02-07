@@ -1,0 +1,11 @@
+{
+  "goal": "Submit \"Show energy consumption breakdown\" and verify energy/distribution widgets appear.",
+  "requiredOutcomes": [
+    "Widget rendered"
+  ],
+  "completedOutcomes": [
+    "Widget rendered"
+  ],
+  "stuckScore": 0,
+  "stepsSinceProgress": 1
+}

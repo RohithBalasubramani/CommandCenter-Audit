@@ -1,0 +1,107 @@
+{
+  "scenarioId": "cc-query-004",
+  "scenarioName": "KPI Metrics Query",
+  "status": "pass",
+  "duration": 166796,
+  "actionCount": 5,
+  "actionLog": [
+    {
+      "step": 1,
+      "timestamp": "2026-02-07T13:24:00.323Z",
+      "action": {
+        "progress": "Page loaded with existing widgets visible. Need to open text input to submit query.",
+        "blocker": "none",
+        "expectedSignal": "Text input field should appear",
+        "confidence": 0.9,
+        "type": "key",
+        "reasoning": "Opening text input overlay with Ctrl+Shift+K keyboard shortcut to submit the KPI metrics query",
+        "key": "Control+Shift+K"
+      },
+      "result": "success",
+      "duration": 14842,
+      "screenshotAfter": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/screenshots/002-step-001-key.png"
+    },
+    {
+      "step": 2,
+      "timestamp": "2026-02-07T13:24:15.515Z",
+      "action": {
+        "progress": "Text input overlay opened successfully. Can see input field with placeholder 'Ask anything...' and Send button.",
+        "blocker": "none",
+        "expectedSignal": "Query should be typed into the input field",
+        "confidence": 0.95,
+        "type": "type",
+        "reasoning": "Typing the KPI metrics query into the text input field",
+        "target": {
+          "placeholder": "Ask anything..."
+        },
+        "value": "Show key metrics overview"
+      },
+      "result": "success",
+      "duration": 13688,
+      "screenshotAfter": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/screenshots/003-step-002-type.png"
+    },
+    {
+      "step": 3,
+      "timestamp": "2026-02-07T13:24:23.779Z",
+      "action": {
+        "progress": "Query typed successfully into input field. Now need to submit it.",
+        "blocker": "none",
+        "expectedSignal": "Text input overlay should close and KPI widgets should appear in the grid",
+        "confidence": 0.95,
+        "type": "key",
+        "reasoning": "Pressing Enter to submit the query and trigger widget rendering",
+        "key": "Enter"
+      },
+      "result": "success",
+      "duration": 6759,
+      "screenshotAfter": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/screenshots/004-step-003-key.png"
+    },
+    {
+      "step": 4,
+      "timestamp": "2026-02-07T13:25:41.891Z",
+      "action": {
+        "progress": "Submitted query with Enter but text input overlay is still open. No KPI widgets appeared yet.",
+        "blocker": "Input overlay didn't close after Enter - may need to click Send button instead",
+        "expectedSignal": "Text input overlay closes and KPI widget cards appear in the grid",
+        "confidence": 0.85,
+        "type": "click",
+        "reasoning": "Enter key didn't work to submit. As a normal user, I'll click the Send button to submit the query instead",
+        "target": {
+          "role": "button",
+          "name": "Send"
+        }
+      },
+      "result": "failed",
+      "error": "locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: 'Send' }).first()\n",
+      "duration": 76609,
+      "screenshotAfter": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/screenshots/005-step-004-click.png"
+    },
+    {
+      "step": 5,
+      "timestamp": "2026-02-07T13:26:27.097Z",
+      "action": {
+        "progress": "KPI widgets are already visible on screen with numeric values: Grid Voltage (238.4 V), Total Power (1247 kW), Equipment Online (12), Active Alerts (3). The query was successfully processed.",
+        "blocker": "none",
+        "expectedSignal": "Task complete - KPI metric widgets are rendered and visible",
+        "confidence": 1,
+        "type": "done",
+        "reasoning": "The task is complete. After submitting the query 'Show key metrics overview', KPI-type widgets appeared in the grid layout showing numeric metrics. The text input overlay closed automatically after submission, which is the expected behavior. I can clearly see 4 KPI widgets with their values displayed."
+      },
+      "result": "success",
+      "duration": 43702
+    }
+  ],
+  "criteriaResults": [
+    {
+      "description": "Widget rendered",
+      "passed": true,
+      "actual": "true"
+    }
+  ],
+  "backendResults": [],
+  "evidence": {
+    "screenshots": [],
+    "networkCaptures": [],
+    "llmDecisions": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/cc-query-004-llm-conversation.json"
+  }
+}

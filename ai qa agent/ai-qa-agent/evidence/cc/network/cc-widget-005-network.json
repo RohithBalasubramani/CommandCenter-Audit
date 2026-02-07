@@ -1,0 +1,27 @@
+[
+  {
+    "method": "GET",
+    "url": "http://localhost:8100/api/layer2/triggers/?",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"triggers\":[],\"timestamp\":\"2026-02-07T13:46:42.445703+00:00\"}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:3100/api/dev-log",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"ok\":true}",
+    "requestBody": "{\"level\":\"warn\",\"args\":[\"./node_modules/onnxruntime-web/dist/ort.wasm.min.js\\nCritical dependency: require function is used in a way in which dependencies cannot be statically extracted\"],\"source\":\"hot-reloader-client.js:227\"}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:3100/api/dev-log",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"ok\":true}",
+    "contentType": "application/json"
+  }
+]

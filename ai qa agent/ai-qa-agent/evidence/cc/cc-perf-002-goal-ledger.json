@@ -1,0 +1,11 @@
+{
+  "goal": "Submit 2 queries (\"Show pumps\" then \"Show alerts\") and verify no uncaught JavaScript errors appear. Check the browser console for errors.",
+  "requiredOutcomes": [
+    "Page functional after queries"
+  ],
+  "completedOutcomes": [
+    "Page functional after queries"
+  ],
+  "stuckScore": 2,
+  "stepsSinceProgress": 2
+}

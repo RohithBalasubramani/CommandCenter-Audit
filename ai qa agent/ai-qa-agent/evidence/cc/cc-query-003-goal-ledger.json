@@ -1,0 +1,11 @@
+{
+  "goal": "Submit \"Show temperature trend for pump 1\" and verify a trend-type widget appears.",
+  "requiredOutcomes": [
+    "Widget rendered"
+  ],
+  "completedOutcomes": [
+    "Widget rendered"
+  ],
+  "stuckScore": 2,
+  "stepsSinceProgress": 2
+}

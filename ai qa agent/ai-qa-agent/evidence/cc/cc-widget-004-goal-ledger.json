@@ -1,0 +1,11 @@
+{
+  "goal": "Submit \"Show pump status\" to get widgets. Hover over a widget and click the resize button (labeled \"Resize: compact → normal\" or similar). Verify the widget changes size.",
+  "requiredOutcomes": [
+    "Widget visible"
+  ],
+  "completedOutcomes": [
+    "Widget visible"
+  ],
+  "stuckScore": 1,
+  "stepsSinceProgress": 4
+}

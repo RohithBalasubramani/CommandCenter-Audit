@@ -1,0 +1,9 @@
+{
+  "goal": "Submit 5 sequential queries (\"Show pumps\", \"Show alerts\", \"Show energy\", \"Show people\", \"Show tasks\") and verify the page remains responsive and functional after all 5.",
+  "requiredOutcomes": [
+    "Page still responsive after 5 queries"
+  ],
+  "completedOutcomes": [],
+  "stuckScore": 8,
+  "stepsSinceProgress": 1
+}

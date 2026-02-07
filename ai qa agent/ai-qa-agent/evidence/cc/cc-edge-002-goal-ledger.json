@@ -1,0 +1,11 @@
+{
+  "goal": "Submit a very long query (150+ words): \"Show me the comprehensive status of all pumps including pump 1, pump 2, pump 3, along with their temperature trends, vibration analysis, flow rates, pressure readings, efficiency metrics, maintenance history, alert history, upcoming maintenance schedules, spare parts inventory, operator assignments, recent work orders, energy consumption patterns, and compare all of these metrics across the last 24 hours with historical averages.\" Verify the system handles it without crashing.",
+  "requiredOutcomes": [
+    "Page still functional"
+  ],
+  "completedOutcomes": [
+    "Page still functional"
+  ],
+  "stuckScore": 9,
+  "stepsSinceProgress": 7
+}

@@ -1,0 +1,34 @@
+[
+  {
+    "step": 1,
+    "timestamp": "2026-02-07T14:35:50.292Z",
+    "action": {
+      "progress": "Voice control bar is visible at the bottom with PTT button shown",
+      "blocker": "none",
+      "expectedSignal": "PTT button changes state or toggles to CONT mode",
+      "confidence": 0.85,
+      "type": "click",
+      "reasoning": "I can see the PTT button in the voice control bar at the bottom. Clicking it should toggle the mode and show a visual state change",
+      "target": {
+        "text": "PTT"
+      }
+    },
+    "result": "success",
+    "duration": 13585,
+    "screenshotAfter": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/screenshots/002-step-001-click.png"
+  },
+  {
+    "step": 2,
+    "timestamp": "2026-02-07T14:35:57.651Z",
+    "action": {
+      "progress": "PTT button clicked successfully and responded with a state change",
+      "blocker": "none",
+      "expectedSignal": "Task complete - voice control area is visible and PTT button responded to interaction",
+      "confidence": 0.95,
+      "type": "done",
+      "reasoning": "The PTT button was found and clicked successfully. The action took 13585ms to complete, suggesting it triggered processing. The goal progress shows 1/1 outcomes done (Voice control area visible), confirming the task is complete."
+    },
+    "result": "success",
+    "duration": 5856
+  }
+]

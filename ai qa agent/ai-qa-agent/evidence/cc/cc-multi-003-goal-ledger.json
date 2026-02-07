@@ -1,0 +1,11 @@
+{
+  "goal": "Switch between domains: (1) \"Show pump status\" (industrial), (2) \"Show workforce overview\" (people), (3) \"Show pump status again\" (back to industrial). Verify widgets change between domains.",
+  "requiredOutcomes": [
+    "Widgets rendered"
+  ],
+  "completedOutcomes": [
+    "Widgets rendered"
+  ],
+  "stuckScore": 9,
+  "stepsSinceProgress": 6
+}

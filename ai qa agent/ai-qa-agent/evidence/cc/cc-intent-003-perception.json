@@ -1,0 +1,40 @@
+[
+  {
+    "step": 1,
+    "url": "http://localhost:3100/",
+    "screenSummary": "Operations Dashboard — 0 elements",
+    "visibleCTAs": [],
+    "confidence": 0.9,
+    "confusionSignals": [],
+    "progressMade": true
+  },
+  {
+    "step": 2,
+    "url": "http://localhost:3100/",
+    "screenSummary": "Operations Dashboard — 0 elements",
+    "visibleCTAs": [],
+    "confidence": 0.9,
+    "confusionSignals": [],
+    "progressMade": false
+  },
+  {
+    "step": 3,
+    "url": "http://localhost:3100/",
+    "screenSummary": "Operations Dashboard — 0 elements",
+    "visibleCTAs": [],
+    "confidence": 0.9,
+    "confusionSignals": [],
+    "progressMade": true
+  },
+  {
+    "step": 4,
+    "url": "http://localhost:3100/",
+    "screenSummary": "Warnings in the Past Hour — 0 elements",
+    "visibleCTAs": [],
+    "confidence": 0.6000000000000001,
+    "confusionSignals": [
+      "BROWSER ERRORS: Warning: Each child in a list should have a unique \"key\" prop.%s%s See https://reactjs.org/link/warning-keys for more information.%s \n\nCheck the render method of `TimelineRenderer`.  \n    at StatusBlock (webpack-internal:///(app-pages-browser)/./src/components/layer4/widgets/timeline.tsx:345:11)\n    | Warning: Cannot update a component (`%s`) while rendering a different component (`%s`). To locate the bad setState() call inside `%s`, follow the stack trace as described in https://reactjs.org/link/setstate-in-render%s HotReload StatusBlock StatusBlock \n    at StatusBlock (webpack-internal:///(app- | Uncaught: Cannot read properties of undefined (reading 'includes')"
+    ],
+    "progressMade": true
+  }
+]

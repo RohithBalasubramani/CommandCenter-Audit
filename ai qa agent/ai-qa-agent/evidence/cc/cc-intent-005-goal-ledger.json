@@ -1,0 +1,11 @@
+{
+  "goal": "Submit \"Show me that thing from earlier\" (ambiguous with no context). Verify the system handles it gracefully without crashing.",
+  "requiredOutcomes": [
+    "Page still functional"
+  ],
+  "completedOutcomes": [
+    "Page still functional"
+  ],
+  "stuckScore": 3,
+  "stepsSinceProgress": 5
+}

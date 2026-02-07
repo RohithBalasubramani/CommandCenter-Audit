@@ -1,0 +1,11 @@
+{
+  "goal": "Find and click the PTT button in the voice control bar. Verify it responds with a visual state change.",
+  "requiredOutcomes": [
+    "Voice control area visible"
+  ],
+  "completedOutcomes": [
+    "Voice control area visible"
+  ],
+  "stuckScore": 0,
+  "stepsSinceProgress": 2
+}

@@ -1,0 +1,11 @@
+{
+  "goal": "Progressively refine: (1) \"Show everything available\", (2) \"Focus on alerts only\", (3) \"Show only critical alerts\". Verify the dashboard narrows down with each query.",
+  "requiredOutcomes": [
+    "Widgets rendered"
+  ],
+  "completedOutcomes": [
+    "Widgets rendered"
+  ],
+  "stuckScore": 8,
+  "stepsSinceProgress": 4
+}

@@ -1,0 +1,18 @@
+[
+  {
+    "method": "GET",
+    "url": "http://localhost:8100/api/layer2/triggers/?since=2026-02-07T13%3A28%3A00.763258%2B00%3A00",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"triggers\":[],\"timestamp\":\"2026-02-07T13:28:30.762360+00:00\"}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "GET",
+    "url": "http://localhost:8100/api/layer2/triggers/?since=2026-02-07T13%3A28%3A30.762360%2B00%3A00",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"triggers\":[],\"timestamp\":\"2026-02-07T13:29:00.762860+00:00\"}",
+    "contentType": "application/json"
+  }
+]

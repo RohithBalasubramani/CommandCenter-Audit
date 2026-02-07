@@ -1,0 +1,11 @@
+{
+  "goal": "Submit \"Show equipment overview\" and verify that widgets appear on the page. The layout should render without freezing the browser.",
+  "requiredOutcomes": [
+    "Widgets rendered"
+  ],
+  "completedOutcomes": [
+    "Widgets rendered"
+  ],
+  "stuckScore": 6,
+  "stepsSinceProgress": 6
+}

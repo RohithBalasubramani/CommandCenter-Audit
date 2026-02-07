@@ -179,7 +179,11 @@ class SchemaDataCollector:
 
         # No-data widgets (helpview, pulseview, chatstream)
         if strategy == "none":
-            return schema.get("demo_shape", {})
+            shape = schema.get("demo_shape", {})
+            if isinstance(shape, dict):
+                shape["_synthetic"] = True
+                shape["_data_source"] = "widget_demo_shape"
+            return shape
 
         # Route to appropriate strategy
         if strategy == "single_metric":
@@ -227,7 +231,8 @@ class SchemaDataCollector:
         )
 
         if not results:
-            return {"demoData": {"label": entity or "Unknown", "value": "N/A", "unit": ""}}
+            return {"demoData": {"label": entity or "Unknown", "value": "N/A", "unit": "",
+                                 "_synthetic": True, "_data_source": "no_data_fallback"}}
 
         doc = results[0]
         meta = doc.metadata
@@ -372,6 +377,8 @@ class SchemaDataCollector:
                 "unit": unit,
                 "timeSeries": time_series,
                 "timeRange": "last_24h",
+                "_synthetic": True,  # GROUNDING AUDIT: marks data as synthetically generated
+                "_data_source": "synthetic_from_vector_metadata",
             }
         }
 

@@ -1,0 +1,11 @@
+{
+  "goal": "Verify the voice control bar is visible at the bottom of the dashboard with a microphone button, a \"Hold Shift+Space to speak\" label, and a PTT button.",
+  "requiredOutcomes": [
+    "PTT button visible"
+  ],
+  "completedOutcomes": [
+    "PTT button visible"
+  ],
+  "stuckScore": 5,
+  "stepsSinceProgress": 6
+}

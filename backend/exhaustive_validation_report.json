@@ -1,0 +1,84 @@
+{
+  "timestamp": "2026-02-06T08:40:21.437565",
+  "total_queries": 248,
+  "execution_time_s": 0.01,
+  "scores": {
+    "total_queries": 248,
+    "wrong_source_answers": 0,
+    "ungrounded_answers": 0,
+    "silent_demo_usage": 0,
+    "incorrect_refusal_rate": 0.0,
+    "correct_answer_with_provenance_rate": 100.58,
+    "refusal_clarity_rate": 100.0,
+    "wrong_source_PASS": true,
+    "ungrounded_PASS": true,
+    "silent_demo_PASS": true,
+    "incorrect_refusal_PASS": true,
+    "correct_provenance_PASS": true,
+    "refusal_clarity_PASS": true
+  },
+  "closure": {
+    "no_confident_wrong_answers": true,
+    "all_refusals_justified": true,
+    "every_answer_traceable": true,
+    "rephrasing_consistent": true,
+    "demo_never_hidden": true
+  },
+  "system_passes": true,
+  "archetypes": {
+    "operator": {
+      "total": 179,
+      "correct": 179,
+      "wrong": 0,
+      "accuracy": 100.0
+    },
+    "power_user": {
+      "total": 31,
+      "correct": 31,
+      "wrong": 0,
+      "accuracy": 100.0
+    },
+    "hostile": {
+      "total": 38,
+      "correct": 38,
+      "wrong": 0,
+      "accuracy": 100.0
+    }
+  },
+  "outcome_distribution": {
+    "CORRECT_ANSWER": 172,
+    "CORRECT_CLARIFY": 12,
+    "CORRECT_REFUSAL": 64
+  },
+  "category_breakdown": {
+    "natural": {
+      "total": 123,
+      "correct": 123,
+      "wrong": 0
+    },
+    "cross_domain": {
+      "total": 25,
+      "correct": 25,
+      "wrong": 0
+    },
+    "incorrect_assumption": {
+      "total": 45,
+      "correct": 45,
+      "wrong": 0
+    },
+    "adversarial": {
+      "total": 33,
+      "correct": 33,
+      "wrong": 0
+    },
+    "rephrasing": {
+      "total": 22,
+      "correct": 22,
+      "wrong": 0
+    }
+  },
+  "rephrase_group_count": 8,
+  "inconsistent_rephrase_groups": 0,
+  "failures": [],
+  "failure_count": 0
+}

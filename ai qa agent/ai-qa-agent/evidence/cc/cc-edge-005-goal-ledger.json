@@ -1,0 +1,11 @@
+{
+  "goal": "Submit 3 queries in rapid succession: \"Show pumps\", \"Show alerts\", \"Show energy\". Open text input, type, submit immediately, then repeat. Verify the system does not crash.",
+  "requiredOutcomes": [
+    "Page still functional after rapid queries"
+  ],
+  "completedOutcomes": [
+    "Page still functional after rapid queries"
+  ],
+  "stuckScore": 3,
+  "stepsSinceProgress": 3
+}

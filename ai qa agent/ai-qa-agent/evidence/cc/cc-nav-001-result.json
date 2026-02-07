@@ -1,0 +1,50 @@
+{
+  "scenarioId": "cc-nav-001",
+  "scenarioName": "Page Load and Hydration",
+  "status": "pass",
+  "duration": 20269,
+  "actionCount": 1,
+  "actionLog": [
+    {
+      "step": 1,
+      "timestamp": "2026-02-07T13:11:49.182Z",
+      "action": {
+        "progress": "Page has loaded successfully with all required elements visible",
+        "blocker": "none",
+        "expectedSignal": "Task complete - all verification criteria met",
+        "confidence": 1,
+        "type": "done",
+        "reasoning": "I can see the Command Center dashboard has loaded with: (1) 'Operations Dashboard' heading at top-left, (2) status bar at bottom showing 'Ready', (3) voice control interface at bottom center with microphone button and 'Hold Shift+Space to speak', (4) grid container visible with multiple widgets (Grid Voltage, Total Power, Equipment Online, Active Alerts, Grid Frequency chart). The URL is at root (localhost:3100/). All task requirements are met."
+      },
+      "result": "success",
+      "duration": 14721
+    }
+  ],
+  "criteriaResults": [
+    {
+      "description": "Grid container is visible",
+      "passed": true,
+      "actual": "true"
+    },
+    {
+      "description": "Page URL is root",
+      "passed": true,
+      "actual": "http://localhost:3100/",
+      "expected": "localhost"
+    }
+  ],
+  "backendResults": [
+    {
+      "description": "Backend API is reachable",
+      "passed": true,
+      "endpoint": "http://localhost:8100/api/layer2/rag/industrial/health/",
+      "status": 200,
+      "responsePreview": "{\"status\":\"ok\",\"domain\":\"industrial\",\"equipment_count\":439,\"alerts_count\":675,\"maintenance_count\":3963,\"llm_available\":true,\"llm_model\":\"phi4\"}"
+    }
+  ],
+  "evidence": {
+    "screenshots": [],
+    "networkCaptures": [],
+    "llmDecisions": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/cc-nav-001-llm-conversation.json"
+  }
+}

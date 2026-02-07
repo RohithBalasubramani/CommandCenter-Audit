@@ -1,0 +1,162 @@
+{
+  "scenarioId": "cc-widget-005",
+  "scenarioName": "Widget Hover Toolbar",
+  "status": "pass",
+  "duration": 138331,
+  "actionCount": 8,
+  "actionLog": [
+    {
+      "step": 1,
+      "timestamp": "2026-02-07T13:44:57.969Z",
+      "action": {
+        "progress": "Dashboard loaded with default widgets visible",
+        "blocker": "none",
+        "expectedSignal": "Text input field should appear",
+        "confidence": 0.9,
+        "type": "key",
+        "reasoning": "Opening text input using Ctrl+Shift+K keyboard shortcut to submit the query",
+        "key": "Control+Shift+K"
+      },
+      "result": "success",
+      "duration": 10555,
+      "screenshotAfter": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/screenshots/002-step-001-key.png"
+    },
+    {
+      "step": 2,
+      "timestamp": "2026-02-07T13:45:11.865Z",
+      "action": {
+        "progress": "Text input overlay opened successfully with input field visible",
+        "blocker": "none",
+        "expectedSignal": "Text 'Show pump status' should appear in the input field",
+        "confidence": 0.95,
+        "type": "type",
+        "reasoning": "Typing the query 'Show pump status' into the input field to request pump status widgets",
+        "target": {
+          "placeholder": "Ask anything..."
+        },
+        "value": "Show pump status"
+      },
+      "result": "success",
+      "duration": 12392,
+      "screenshotAfter": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/screenshots/003-step-002-type.png"
+    },
+    {
+      "step": 3,
+      "timestamp": "2026-02-07T13:45:24.356Z",
+      "action": {
+        "progress": "Query 'Show pump status' typed successfully in input field",
+        "blocker": "none",
+        "expectedSignal": "Widgets should appear on screen after submission",
+        "confidence": 0.95,
+        "type": "click",
+        "reasoning": "Clicking the Send button to submit the query and get pump status widgets",
+        "target": {
+          "role": "button",
+          "name": "Send"
+        }
+      },
+      "result": "success",
+      "duration": 10986,
+      "screenshotAfter": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/screenshots/004-step-003-click.png"
+    },
+    {
+      "step": 4,
+      "timestamp": "2026-02-07T13:45:32.661Z",
+      "action": {
+        "progress": "Query submitted successfully - page title changed to 'Pumps and Alerts Overview' indicating widgets have been generated",
+        "blocker": "none",
+        "expectedSignal": "Floating toolbar with action buttons should appear on the widget card",
+        "confidence": 0.85,
+        "type": "screenshot",
+        "reasoning": "Need to see the current screen to identify widget cards before hovering - the Elements list shows 0 items which seems incomplete, taking screenshot to verify widgets are visible"
+      },
+      "result": "success",
+      "duration": 6800,
+      "screenshotAfter": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/screenshots/006-step-004-screenshot.png"
+    },
+    {
+      "step": 5,
+      "timestamp": "2026-02-07T13:46:01.593Z",
+      "action": {
+        "progress": "Widgets are visible on screen - I can see trend charts, KPI cards, and alert widgets",
+        "blocker": "none",
+        "expectedSignal": "Floating toolbar with Pin, Resize, Focus, Snapshot, and Dismiss buttons should appear at the top of the widget",
+        "confidence": 0.8,
+        "type": "hover",
+        "reasoning": "Hovering over the 'Supply & Demand' trend widget at the top to trigger the floating toolbar",
+        "target": {
+          "text": "Supply & Demand"
+        }
+      },
+      "result": "failed",
+      "error": "locator.hover: Timeout 15000ms exceeded.\nCall log:\n  - waiting for getByText('Supply & Demand').first()\n",
+      "duration": 27428,
+      "screenshotAfter": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/screenshots/007-step-005-hover.png"
+    },
+    {
+      "step": 6,
+      "timestamp": "2026-02-07T13:46:10.459Z",
+      "action": {
+        "progress": "Previous hover attempt failed - Elements list shows 0 items which means the page isn't fully rendering element data",
+        "blocker": "Elements list is empty despite widgets being visible in screenshots - cannot identify proper selectors",
+        "expectedSignal": "Widget cards should be accessible for hovering",
+        "confidence": 0.6,
+        "type": "hover",
+        "reasoning": "Attempting to hover using coordinates in the center area where I can see widget cards in the screenshot - targeting approximate location of the first visible widget",
+        "target": {
+          "coordinates": {
+            "x": 400,
+            "y": 300
+          }
+        }
+      },
+      "result": "failed",
+      "error": "No valid selector in target",
+      "duration": 7360,
+      "screenshotAfter": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/screenshots/008-step-006-hover.png"
+    },
+    {
+      "step": 7,
+      "timestamp": "2026-02-07T13:46:40.053Z",
+      "action": {
+        "progress": "Widgets are visible in screenshots but Elements list has been empty (0 items) for all steps - this is a critical blocker preventing proper selector identification",
+        "blocker": "Elements list consistently shows 0 items despite visible widgets on screen - cannot identify proper selectors for widget cards to hover over them",
+        "expectedSignal": "Page should refresh and Elements list should populate with actual widget card elements",
+        "confidence": 0.7,
+        "type": "navigate",
+        "reasoning": "Reloading the page completely to force a fresh render and hopefully populate the Elements list with actual selectors - the empty Elements list across all steps indicates a fundamental detection issue that needs resetting",
+        "url": "http://localhost:3100/"
+      },
+      "result": "success",
+      "duration": 28090,
+      "screenshotAfter": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/screenshots/009-step-007-navigate.png"
+    },
+    {
+      "step": 8,
+      "timestamp": "2026-02-07T13:47:00.554Z",
+      "action": {
+        "progress": "Page reloaded but Elements list still shows 0 items - this appears to be a fundamental issue with element detection, not just a rendering problem",
+        "blocker": "Elements list has been consistently empty across all 8 steps despite visible UI. Cannot proceed with hover testing when no selectors are available. This suggests either a page rendering issue preventing accessibility tree generation, or a critical bug in the element detection system itself.",
+        "expectedSignal": "N/A",
+        "confidence": 0.1,
+        "type": "done",
+        "reasoning": "STUCK: Cannot complete hover verification task because the Elements list has been empty for all 8 steps. Without valid selectors, I cannot programmatically hover over widget cards. The visible screenshots show widgets exist, but the automation framework cannot detect them for interaction. This is a blocker that cannot be overcome with different navigation or approaches - the fundamental element detection is broken."
+      },
+      "result": "success",
+      "duration": 18997
+    }
+  ],
+  "criteriaResults": [
+    {
+      "description": "Widget visible",
+      "passed": true,
+      "actual": "true"
+    }
+  ],
+  "backendResults": [],
+  "evidence": {
+    "screenshots": [],
+    "networkCaptures": [],
+    "llmDecisions": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/cc-widget-005-llm-conversation.json"
+  }
+}

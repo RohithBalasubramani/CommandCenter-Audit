@@ -1,0 +1,11 @@
+{
+  "goal": "Submit \"Show pumps, alerts, and energy overview\" and verify multiple widget cards appear in the grid.",
+  "requiredOutcomes": [
+    "Widgets rendered"
+  ],
+  "completedOutcomes": [
+    "Widgets rendered"
+  ],
+  "stuckScore": 4,
+  "stepsSinceProgress": 3
+}

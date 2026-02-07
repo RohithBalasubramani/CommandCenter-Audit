@@ -1,0 +1,11 @@
+{
+  "goal": "Send a pump status query, wait for widgets to render, and verify the response looks good. The RL evaluator will automatically submit positive feedback.",
+  "requiredOutcomes": [
+    "Widgets rendered on page"
+  ],
+  "completedOutcomes": [
+    "Widgets rendered on page"
+  ],
+  "stuckScore": 0,
+  "stepsSinceProgress": 1
+}

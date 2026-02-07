@@ -1,0 +1,84 @@
+[
+  {
+    "step": 1,
+    "url": "http://localhost:3100/",
+    "screenSummary": "Operations Dashboard — 0 elements",
+    "visibleCTAs": [],
+    "confidence": 0.9,
+    "confusionSignals": [],
+    "progressMade": true
+  },
+  {
+    "step": 2,
+    "url": "http://localhost:3100/",
+    "screenSummary": "Operations Dashboard — 0 elements",
+    "visibleCTAs": [],
+    "confidence": 0.9,
+    "confusionSignals": [],
+    "progressMade": false
+  },
+  {
+    "step": 3,
+    "url": "http://localhost:3100/",
+    "screenSummary": "Operations Dashboard — 0 elements",
+    "visibleCTAs": [],
+    "confidence": 0.9,
+    "confusionSignals": [],
+    "progressMade": false
+  },
+  {
+    "step": 4,
+    "url": "http://localhost:3100/",
+    "screenSummary": "Operations Dashboard — 0 elements",
+    "visibleCTAs": [],
+    "confidence": 0.6000000000000001,
+    "confusionSignals": [
+      "STUCK: Same screen 3 times. Try something COMPLETELY different."
+    ],
+    "progressMade": true
+  },
+  {
+    "step": 5,
+    "url": "http://localhost:3100/",
+    "screenSummary": "Operations Dashboard — 0 elements",
+    "visibleCTAs": [],
+    "confidence": 0.6000000000000001,
+    "confusionSignals": [
+      "STUCK: Same screen 4 times. Try something COMPLETELY different."
+    ],
+    "progressMade": false
+  },
+  {
+    "step": 6,
+    "url": "http://localhost:3100/",
+    "screenSummary": "Pumps and Alerts Overview — 0 elements",
+    "visibleCTAs": [],
+    "confidence": 0.6000000000000001,
+    "confusionSignals": [
+      "BROWSER ERRORS: Warning: Each child in a list should have a unique \"key\" prop.%s%s See https://reactjs.org/link/warning-keys for more information.%s \n\nCheck the render method of `TrendWidget`.  \n    at LineFn (webpack-internal:///(app-pages-browser)/./node_modules/recharts/es6/cartesian/Line.js:690:94)\n    at Trend"
+    ],
+    "progressMade": false
+  },
+  {
+    "step": 7,
+    "url": "http://localhost:3100/",
+    "screenSummary": "Pumps and Alerts Overview — 0 elements",
+    "visibleCTAs": [],
+    "confidence": 0.6000000000000001,
+    "confusionSignals": [
+      "NO PROGRESS for 4 steps. Change your approach or give up."
+    ],
+    "progressMade": false
+  },
+  {
+    "step": 8,
+    "url": "http://localhost:3100/",
+    "screenSummary": "Pumps and Alerts Overview — 0 elements",
+    "visibleCTAs": [],
+    "confidence": 0.6000000000000001,
+    "confusionSignals": [
+      "NO PROGRESS for 5 steps. Change your approach or give up."
+    ],
+    "progressMade": false
+  }
+]

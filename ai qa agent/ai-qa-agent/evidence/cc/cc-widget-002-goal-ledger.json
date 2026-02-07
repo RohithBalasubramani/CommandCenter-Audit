@@ -1,0 +1,11 @@
+{
+  "goal": "Submit \"Show pump status\" to get widgets. Hover over a widget card to reveal the floating toolbar, then click the \"Pin widget\" button.",
+  "requiredOutcomes": [
+    "Widget visible"
+  ],
+  "completedOutcomes": [
+    "Widget visible"
+  ],
+  "stuckScore": 7,
+  "stepsSinceProgress": 4
+}

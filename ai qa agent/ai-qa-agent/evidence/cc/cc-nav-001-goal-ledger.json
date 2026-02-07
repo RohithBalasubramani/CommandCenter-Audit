@@ -1,0 +1,13 @@
+{
+  "goal": "Verify the Command Center page loads successfully with all core UI elements: a heading, a status bar at the bottom showing \"Ready\", voice control buttons, and a grid container.",
+  "requiredOutcomes": [
+    "Grid container is visible",
+    "Page URL is root"
+  ],
+  "completedOutcomes": [
+    "Grid container is visible",
+    "Page URL is root"
+  ],
+  "stuckScore": 0,
+  "stepsSinceProgress": 1
+}

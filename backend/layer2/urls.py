@@ -13,6 +13,12 @@ from .views import (
     rl_status,
     system_triggers,
     webhook_trigger,
+    # System Grounding API (Phase 1-5 Audit)
+    system_registry_view,
+    schema_introspect_view,
+    find_table_view,
+    grounding_audit_view,
+    traversal_action_view,
 )
 
 router = DefaultRouter()
@@ -36,4 +42,10 @@ urlpatterns = [
     path("triggers/", system_triggers, name="layer2-triggers"),
     # External webhook/role_change trigger intake
     path("triggers/webhook/", webhook_trigger, name="layer2-webhook-trigger"),
+    # System Grounding API (Phase 1-5 Audit)
+    path("grounding/registry/", system_registry_view, name="grounding-registry"),
+    path("grounding/introspect/", schema_introspect_view, name="grounding-introspect"),
+    path("grounding/find-table/", find_table_view, name="grounding-find-table"),
+    path("grounding/audit/", grounding_audit_view, name="grounding-audit"),
+    path("grounding/traverse/", traversal_action_view, name="grounding-traverse"),
 ]

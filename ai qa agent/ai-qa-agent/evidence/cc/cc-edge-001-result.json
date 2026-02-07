@@ -1,0 +1,111 @@
+{
+  "scenarioId": "cc-edge-001",
+  "scenarioName": "Empty Query Prevention",
+  "status": "pass",
+  "duration": 124368,
+  "actionCount": 6,
+  "actionLog": [
+    {
+      "step": 1,
+      "timestamp": "2026-02-07T14:06:30.287Z",
+      "action": {
+        "progress": "Starting task - need to open text input overlay",
+        "blocker": "none",
+        "expectedSignal": "Text input overlay should appear with an input field and disabled Send button",
+        "confidence": 0.8,
+        "type": "key",
+        "reasoning": "Using Ctrl+Shift+K keyboard shortcut to open the text input overlay as instructed",
+        "key": "Control+Shift+K"
+      },
+      "result": "success",
+      "duration": 12293,
+      "screenshotAfter": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/screenshots/002-step-001-key.png"
+    },
+    {
+      "step": 2,
+      "timestamp": "2026-02-07T14:06:44.241Z",
+      "action": {
+        "progress": "Text input overlay opened successfully - I can see the input field with placeholder 'Ask anything...' and a Send button",
+        "blocker": "Elements list shows 0 elements, but I need to verify the Send button state visually - the button appears grayed out/muted which suggests it's disabled",
+        "expectedSignal": "Button should remain visually disabled/grayed out since input is empty",
+        "confidence": 0.9,
+        "type": "screenshot",
+        "reasoning": "Taking a screenshot to better assess the current Send button state before typing - I can see it's grayed out compared to what an enabled button would look like"
+      },
+      "result": "success",
+      "duration": 12450,
+      "screenshotAfter": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/screenshots/004-step-002-screenshot.png"
+    },
+    {
+      "step": 3,
+      "timestamp": "2026-02-07T14:06:54.263Z",
+      "action": {
+        "progress": "Confirmed the text input overlay is open with an empty input field and the Send button appears visually disabled (grayed out/muted styling)",
+        "blocker": "Elements list shows 0 elements which makes it difficult to interact, but I can see the input field visually",
+        "expectedSignal": "The input field should accept text and the Send button should change from grayed out to bright blue (enabled state)",
+        "confidence": 0.85,
+        "type": "click",
+        "reasoning": "Clicking on the input field to focus it before typing 'test' - the input field is visible in the center of the overlay with placeholder 'Ask anything...'",
+        "target": {
+          "placeholder": "Ask anything..."
+        }
+      },
+      "result": "success",
+      "duration": 8518,
+      "screenshotAfter": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/screenshots/005-step-003-click.png"
+    },
+    {
+      "step": 4,
+      "timestamp": "2026-02-07T14:07:11.708Z",
+      "action": {
+        "type": "wait",
+        "reasoning": "Missing target for type",
+        "progress": "none",
+        "blocker": "Missing target for type",
+        "confidence": 0.3,
+        "expectedSignal": "A clearer state appears"
+      },
+      "result": "success",
+      "duration": 15942,
+      "screenshotAfter": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/screenshots/006-step-004-wait.png"
+    },
+    {
+      "step": 5,
+      "timestamp": "2026-02-07T14:07:42.133Z",
+      "action": {
+        "type": "wait",
+        "reasoning": "Missing target for type",
+        "progress": "none",
+        "blocker": "Missing target for type",
+        "confidence": 0.3,
+        "expectedSignal": "A clearer state appears"
+      },
+      "result": "success",
+      "duration": 28921,
+      "screenshotAfter": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/screenshots/007-step-005-wait.png"
+    },
+    {
+      "step": 6,
+      "timestamp": "2026-02-07T14:08:17.106Z",
+      "action": {
+        "type": "done",
+        "reasoning": "STUCK: 6 steps without progress. Same screen 5 times. Abandoning task."
+      },
+      "result": "success",
+      "duration": 33469
+    }
+  ],
+  "criteriaResults": [
+    {
+      "description": "Page functional",
+      "passed": true,
+      "actual": "true"
+    }
+  ],
+  "backendResults": [],
+  "evidence": {
+    "screenshots": [],
+    "networkCaptures": [],
+    "llmDecisions": "/home/rohith/desktop/CommandCenter/ai qa agent/ai-qa-agent/evidence/cc/cc-edge-001-llm-conversation.json"
+  }
+}

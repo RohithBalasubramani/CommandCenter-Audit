@@ -1,0 +1,11 @@
+{
+  "goal": "Submit \"Show comprehensive overview with all available data\" and verify the page loads. The page should not have an excessive number of DOM nodes.",
+  "requiredOutcomes": [
+    "Page rendered"
+  ],
+  "completedOutcomes": [
+    "Page rendered"
+  ],
+  "stuckScore": 10,
+  "stepsSinceProgress": 5
+}

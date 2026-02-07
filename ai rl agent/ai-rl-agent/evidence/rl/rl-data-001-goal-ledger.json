@@ -1,0 +1,9 @@
+{
+  "goal": "Send a pump status query via the text input and verify that widgets with data-scenario attributes appear on the page. The RL evaluator will separately verify backend consistency.",
+  "requiredOutcomes": [
+    "Widgets rendered on page"
+  ],
+  "completedOutcomes": [],
+  "stuckScore": 8,
+  "stepsSinceProgress": 3
+}

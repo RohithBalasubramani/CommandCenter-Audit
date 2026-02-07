@@ -1,0 +1,11 @@
+{
+  "goal": "Submit an XSS attempt: \"<script>alert(\"xss\")</script>\" as a query. Verify no script execution occurs and the page remains functional.",
+  "requiredOutcomes": [
+    "Page still functional (no XSS)"
+  ],
+  "completedOutcomes": [
+    "Page still functional (no XSS)"
+  ],
+  "stuckScore": 7,
+  "stepsSinceProgress": 6
+}

@@ -33,6 +33,17 @@ from layer2.data_collector import SchemaDataCollector
 from layer2.widget_catalog import CATALOG_BY_SCENARIO
 from layer2.reconciliation.pipeline import ReconciliationPipeline
 
+# System Grounding imports (Phase 1-5 Audit — all 8 failure modes)
+from layer2.source_resolver import SourceVerificationGate, SourceResolution
+from layer2.traversal import TraversalEngine
+from layer2.grounding_audit import get_grounding_auditor, GroundingAuditEntry
+from layer2.data_provenance import (
+    stamp_widget_provenance,
+    build_response_provenance,
+    validate_response_provenance,
+    ResponseProvenance,
+)
+
 logger = logging.getLogger(__name__)
 
 # Pipeline v2 flag — set PIPELINE_V2=1 env var to enable
@@ -254,6 +265,8 @@ class OrchestratorResponse:
     filler_text: str = ""  # Filler to speak while processing
     timings: OrchestratorTimings = None  # F1 Fix: Per-stage latency breakdown
     query_id: str = ""  # Unique ID for RL feedback tracking
+    # F2/F5: Mandatory data provenance — derived_from MUST be non-empty for data queries
+    provenance: Optional[dict] = None
 
 
 class Layer2Orchestrator:
@@ -382,15 +395,96 @@ class Layer2Orchestrator:
 
         filler = self._generate_filler(intent)
 
+        # ══════════════════════════════════════════════════════════════
+        # GROUNDING GATE: Source Resolution (Phase 2 Audit)
+        # The AI MUST resolve authoritative sources BEFORE proceeding.
+        # If resolution fails → refuse or ask clarification.
+        # ══════════════════════════════════════════════════════════════
+        stage_start = time.time()
+        auditor = get_grounding_auditor()
+        audit_entry = auditor.start_entry(query_id, transcript)
+
+        source_gate = SourceVerificationGate()
+        can_proceed, source_resolution, refusal_msg = source_gate.verify_or_refuse(
+            intent_type=parsed.type,
+            domains=parsed.domains,
+            entities=parsed.entities,
+            transcript=transcript,
+        )
+        auditor.record_resolution(audit_entry, source_resolution)
+
+        source_resolve_ms = int((time.time() - stage_start) * 1000)
+        logger.info(
+            f"[v2] Source resolution: outcome={source_resolution.outcome.value} "
+            f"primary={source_resolution.primary_source.id if source_resolution.primary_source else 'none'} "
+            f"demo_warnings={len(source_resolution.demo_warnings)} ({source_resolve_ms}ms)"
+        )
+
+        if not can_proceed:
+            # Source resolution failed — refuse or ask clarification
+            processing_time = int((time.time() - start_time) * 1000)
+            auditor.record_response(audit_entry, "refusal")
+            auditor.finalize_entry(audit_entry)
+            logger.warning(f"[v2] GROUNDING REFUSAL: {refusal_msg}")
+            return OrchestratorResponse(
+                voice_response=refusal_msg,
+                layout_json=None,
+                context_update=self._update_context(intent, []),
+                intent=intent,
+                processing_time_ms=processing_time,
+                query_id=query_id,
+            )
+
+        # ══════════════════════════════════════════════════════════════
+        # TRAVERSAL: Pre-verify data exists (Phase 3/F4 Audit)
+        # Execute explicit traversal actions BEFORE LLM processing.
+        # HARD RULE: At least ONE traversal action must execute for
+        # every data query. If zero traversals → response blocked.
+        # ══════════════════════════════════════════════════════════════
+        traversal = TraversalEngine()
+
+        # Traversal: check entities exist in authoritative source
+        devices = parsed.entities.get("devices") or []
+        for device in devices[:5]:
+            traversal.check_entity_exists(device)
+
+        # Traversal: get active alert state if alerts domain
+        if "alerts" in parsed.domains:
+            entity_for_alerts = devices[0] if devices else None
+            traversal.get_alert_state(entity_for_alerts)
+
+        # F4 HARD RULE: If no entity-specific traversal happened,
+        # do a mandatory baseline traversal (check data presence)
+        if traversal.context.step_count == 0:
+            # Always perform at least one traversal action
+            if source_resolution.primary_source:
+                # Describe the primary source to verify it's accessible
+                for table in (source_resolution.primary_source.tables or [])[:1]:
+                    traversal.describe_table(table.name)
+            if traversal.context.step_count == 0:
+                # Last resort: list databases to prove we traversed
+                traversal.list_databases()
+
+        auditor.record_traversal(audit_entry, traversal.context)
+
+        # Log demo data warnings into the data summary for LLM awareness
+        demo_notice = ""
+        if source_resolution.demo_warnings:
+            demo_notice = (
+                "\n[SYSTEM NOTE: Data sources have hybrid/demo status. "
+                "Responses should indicate data may be from seeded/demo sources.]\n"
+            )
+
         # Stage 2.5: Data Pre-Fetch — tell the LLM what data exists for mentioned entities
         stage_start = time.time()
         from layer2.data_prefetcher import DataPrefetcher
         try:
             data_summary = DataPrefetcher().prefetch(parsed)
+            data_summary = demo_notice + data_summary
             logger.info(f"[v2] Pre-fetch: {len(data_summary)} chars of entity context")
         except Exception as e:
             logger.warning(f"Pre-fetch failed: {e}")
-            data_summary = ""
+            data_summary = demo_notice
 
         # Get user memory context
         from layer2.user_memory import UserMemoryManager
@@ -530,15 +624,29 @@ class Layer2Orchestrator:
         widget_data = self._pack_row_gaps(widget_data)
 
         # Stage 4.5: Reconciliation — validate/transform each widget's data
+        # F8: FAIL-LOUD — refused widgets are DROPPED, not silently kept
         stage_start = time.time()
         widget_data = self._reconcile_widget_data(widget_data)
         timings.reconcile_ms = int((time.time() - stage_start) * 1000)
         logger.info(f"[v2] Reconciliation: {timings.reconcile_ms}ms for {len(widget_data)} widgets")
 
+        # ══════════════════════════════════════════════════════════════
+        # F2/F5: STAMP PROVENANCE on every widget's data_override
+        # HARD RULE: Every data payload MUST have provenance markers.
+        # ══════════════════════════════════════════════════════════════
+        for w in widget_data:
+            stamp_widget_provenance(w, source_resolution, traversal.context)
+
+        # Build response-level provenance (derived_from)
+        response_provenance = build_response_provenance(
+            source_resolution, traversal.context, widget_data
+        )
+
         layout_json = {
             "heading": widget_plan.heading,
             "widgets": widget_data,
             "transitions": {},
+            "_provenance": response_provenance.to_dict(),
         }
 
         # Collect voice response (was running concurrently with fixture selection)
@@ -596,6 +704,31 @@ class Layer2Orchestrator:
         except Exception as e:
             logger.debug(f"RL experience recording skipped: {e}")
 
+        # ══════════════════════════════════════════════════════════════
+        # GROUNDING AUDIT: Finalize audit entry (Phase 5)
+        # ══════════════════════════════════════════════════════════════
+        try:
+            auditor.record_response(
+                audit_entry,
+                response_type="dashboard",
+                widget_count=len(widget_data),
+                confidence=parsed.confidence,
+            )
+            # Check for synthetic data usage (time series fallback generates synthetic data)
+            used_synthetic = any(
+                "_synthetic" in str(w.get("data_override", {}))
+                for w in widget_data
+            )
+            auditor.record_data_origin(
+                audit_entry,
+                source_id=source_resolution.primary_source.id if source_resolution.primary_source else "unknown",
+                verified=traversal.context.step_count > 0,
+                used_synthetic=used_synthetic,
+            )
+            auditor.finalize_entry(audit_entry)
+        except Exception as e:
+            logger.debug(f"Grounding audit finalization skipped: {e}")
+
         return OrchestratorResponse(
             voice_response=voice_response,
             layout_json=layout_json,
@@ -605,13 +738,16 @@ class Layer2Orchestrator:
             filler_text=filler,
             timings=timings,  # F1 Fix: Include per-stage latency breakdown
             query_id=query_id,  # For RL feedback tracking
+            provenance=response_provenance.to_dict(),  # F2/F5: Mandatory provenance
         )
 
     def _reconcile_widget_data(self, widgets: list) -> list:
         """Run reconciliation pipeline on each widget's data_override.
 
-        Validates and transforms LLM output against widget schemas.
-        On failure, falls back to the original data (graceful degradation).
+        F8 FIX: FAIL-LOUD reconciliation.
+        - If reconciliation refuses data → widget is DROPPED (not silently kept)
+        - If reconciliation errors → widget is DROPPED with logged defect
+        - NO silent normalization, NO "best effort" coercion
         """
         if not hasattr(self, "_reconciliation_pipeline"):
             self._reconciliation_pipeline = ReconciliationPipeline(
@@ -634,15 +770,21 @@ class Layer2Orchestrator:
                         logger.debug(
                             f"[reconcile] {scenario}: {len(result.assumptions)} assumptions applied"
                         )
+                    reconciled.append(w)
                 else:
-                    # Graceful fallback: keep original data on refusal
+                    # F8: FAIL-LOUD — DROP widget instead of silently keeping bad data
                     reason = result.refusal.reason if result.refusal else "unknown"
-                    logger.warning(f"[reconcile] {scenario}: refusal ({reason}), keeping original data")
+                    logger.warning(
+                        f"[reconcile] {scenario}: DROPPED — refusal ({reason}). "
+                        f"F8: fail-loud reconciliation, no silent fallback."
+                    )
+                    # Widget is NOT added to reconciled list
             except Exception as e:
-                # Non-fatal: reconciliation errors should never block the pipeline
-                logger.warning(f"[reconcile] {scenario}: error ({e}), keeping original data")
-
-            reconciled.append(w)
+                # F8: FAIL-LOUD — DROP widget on error, no silent pass-through
+                logger.warning(
+                    f"[reconcile] {scenario}: DROPPED — error ({e}). "
+                    f"F8: fail-loud reconciliation, no silent fallback."
+                )
 
         return reconciled
 

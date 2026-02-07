@@ -1,0 +1,68 @@
+{
+  "name": "@neurareport/ai-qa-agent",
+  "version": "1.0.0",
+  "description": "State-of-the-art, framework-agnostic AI testing agent powered by Claude Code CLI",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf dist",
+    "prepublishOnly": "npm run build",
+    "test:cc": "npx tsx src/cc-runner.ts",
+    "test:cc:smoke": "npx tsx src/cc-runner.ts --tag smoke",
+    "test:cc:critical": "npx tsx src/cc-runner.ts --priority critical",
+    "test:cc:headed": "npx tsx src/cc-runner.ts --headed",
+    "test:cc:list": "npx tsx src/cc-runner.ts --list"
+  },
+  "keywords": [
+    "ai",
+    "testing",
+    "e2e",
+    "playwright",
+    "automation",
+    "claude",
+    "llm",
+    "qa",
+    "agent",
+    "browser-testing",
+    "web-testing"
+  ],
+  "author": "NeuraReport",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/neurareport/ai-qa-agent.git"
+  },
+  "bugs": {
+    "url": "https://github.com/neurareport/ai-qa-agent/issues"
+  },
+  "homepage": "https://github.com/neurareport/ai-qa-agent#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "peerDependencies": {
+    "@playwright/test": ">=1.40.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@types/node": "^20.19.32",
+    "rimraf": "^5.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "goal": "Send a pump status query and verify the response contains appropriate equipment/KPI widgets. Evaluate widget scenario relevance and data accuracy.",
+  "requiredOutcomes": [
+    "At least 1 widget rendered",
+    "Voice response contains pump-related content"
+  ],
+  "completedOutcomes": [],
+  "stuckScore": 8,
+  "stepsSinceProgress": 2
+}

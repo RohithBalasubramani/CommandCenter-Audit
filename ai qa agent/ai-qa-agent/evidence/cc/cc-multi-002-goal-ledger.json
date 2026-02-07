@@ -1,0 +1,11 @@
+{
+  "goal": "Conduct a 5-turn investigation: (1) \"Show all pumps\", (2) \"Focus on pump 1\", (3) \"Show temperature trend\", (4) \"Compare all pump temperatures\", (5) \"Show alerts for pumps\". Wait for widgets after each. Verify the layout updates.",
+  "requiredOutcomes": [
+    "Widgets rendered"
+  ],
+  "completedOutcomes": [
+    "Widgets rendered"
+  ],
+  "stuckScore": 8,
+  "stepsSinceProgress": 6
+}

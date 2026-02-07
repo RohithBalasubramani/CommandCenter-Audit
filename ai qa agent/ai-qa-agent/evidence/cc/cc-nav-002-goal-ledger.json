@@ -1,0 +1,11 @@
+{
+  "goal": "Click the \"Voice UI (Ctrl+B)\" button to switch between dashboard and voice views, then click it again to return. Verify the view changes each time.",
+  "requiredOutcomes": [
+    "Page loaded successfully"
+  ],
+  "completedOutcomes": [
+    "Page loaded successfully"
+  ],
+  "stuckScore": 5,
+  "stepsSinceProgress": 8
+}

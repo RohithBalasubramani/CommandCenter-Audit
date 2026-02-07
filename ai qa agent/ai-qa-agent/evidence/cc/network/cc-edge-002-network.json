@@ -1,0 +1,36 @@
+[
+  {
+    "method": "GET",
+    "url": "http://localhost:8100/api/layer2/triggers/?since=2026-02-07T14%3A10%3A50.792617%2B00%3A00",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"triggers\":[{\"kind\":\"time_of_day\",\"source\":\"system\",\"message\":\"Afternoon shift starting — loading shift handover\",\"timestamp\":\"2026-02-07T14:11:20.790885+00:00\",\"payload\":{\"shift\":\"afternoon\"}}],\"timestamp\":\"2026-02-07T14:11:20.790885+00:00\"}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:3100/api/dev-log",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"ok\":true}",
+    "requestBody": "{\"level\":\"debug\",\"args\":[\"[EventBus]\",\"#6 EMIT \\\"SYSTEM_TRIGGER\\\" → 0 type + 0 catch-all = 0 handler(s)\",{\"type\":\"SYSTEM_TRIGGER\",\"trigger\":{\"kind\":\"time_of_day\",\"source\":\"system\",\"message\":\"Afternoon shift starting — loading shift handover\",\"timestamp\":\"2026-02-07T14:11:20.790885+00:00\",\"payload\":{\"shift\":\"afternoon\"}}}],\"source\":\"events.ts:39\"}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "GET",
+    "url": "http://localhost:8100/api/layer2/triggers/?since=2026-02-07T14%3A11%3A20.790885%2B00%3A00",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"triggers\":[{\"kind\":\"time_of_day\",\"source\":\"system\",\"message\":\"Afternoon shift starting — loading shift handover\",\"timestamp\":\"2026-02-07T14:11:50.791410+00:00\",\"payload\":{\"shift\":\"afternoon\"}}],\"timestamp\":\"2026-02-07T14:11:50.791410+00:00\"}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:3100/api/dev-log",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"ok\":true}",
+    "requestBody": "{\"level\":\"debug\",\"args\":[\"[EventBus]\",\"#7 EMIT \\\"SYSTEM_TRIGGER\\\" → 0 type + 0 catch-all = 0 handler(s)\",{\"type\":\"SYSTEM_TRIGGER\",\"trigger\":{\"kind\":\"time_of_day\",\"source\":\"system\",\"message\":\"Afternoon shift starting — loading shift handover\",\"timestamp\":\"2026-02-07T14:11:50.791410+00:00\",\"payload\":{\"shift\":\"afternoon\"}}}],\"source\":\"events.ts:39\"}",
+    "contentType": "application/json"
+  }
+]

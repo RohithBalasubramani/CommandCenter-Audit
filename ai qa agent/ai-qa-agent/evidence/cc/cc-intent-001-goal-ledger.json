@@ -1,0 +1,9 @@
+{
+  "goal": "Submit \"Hello\" as a query. The system should respond with a greeting without spawning data widgets. Verify no widget cards with data-scenario attributes appear.",
+  "requiredOutcomes": [
+    "Page still functional"
+  ],
+  "completedOutcomes": [],
+  "stuckScore": 10,
+  "stepsSinceProgress": 2
+}

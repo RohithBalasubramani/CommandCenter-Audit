@@ -1,0 +1,11 @@
+{
+  "goal": "Click the \"Debug (Ctrl+D)\" button to open the debug panel. Verify it shows pipeline status information including \"Layer 1\" and \"Layer 2\" sections. Then close it.",
+  "requiredOutcomes": [
+    "Page is interactive"
+  ],
+  "completedOutcomes": [
+    "Page is interactive"
+  ],
+  "stuckScore": 0,
+  "stepsSinceProgress": 3
+}

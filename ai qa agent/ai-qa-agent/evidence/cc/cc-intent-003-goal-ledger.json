@@ -1,0 +1,11 @@
+{
+  "goal": "Submit \"What is the status of transformer TR-001?\" and verify the system classifies it as an equipment query and returns widgets.",
+  "requiredOutcomes": [
+    "Widget rendered"
+  ],
+  "completedOutcomes": [
+    "Widget rendered"
+  ],
+  "stuckScore": 0,
+  "stepsSinceProgress": 1
+}

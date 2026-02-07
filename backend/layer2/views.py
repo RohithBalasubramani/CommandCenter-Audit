@@ -71,8 +71,8 @@ def industrial_rag_query(request):
     query_text = request.data.get("query", "")
     # context = request.data.get("context", {})
 
-    # Stub: In production, this would query LoggerDeploy / PostgreSQL
-    # for metrics, devices, device_status tables
+    # STUB ENDPOINT — explicitly marked per F6 audit requirement.
+    # safe_to_answer: false → AI MUST refuse to use this data.
     return Response(
         {
             "domain": "industrial",
@@ -83,6 +83,11 @@ def industrial_rag_query(request):
                 "alerts": [],
             },
             "status": "stub",
+            "reason": "integration_pending",
+            "safe_to_answer": False,
+            "_data_source": "api.industrial_rag",
+            "_integration_status": "stub",
+            "_authoritative": False,
         }
     )
 
@@ -187,6 +192,8 @@ def orchestrate(request):
             for r in result.rag_results
         ],
         "processing_time_ms": result.processing_time_ms,
+        # F2/F5: Mandatory provenance — derived_from, data sources, demo warnings
+        "provenance": result.provenance,
     }
 
     return Response(response_data)
@@ -591,3 +598,122 @@ def webhook_trigger(request):
     _webhook_trigger_store.push(kind, trigger)
 
     return Response({"status": "queued", "trigger": trigger}, status=201)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SYSTEM GROUNDING API (Phase 1-5 Audit)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@api_view(["GET"])
+def system_registry_view(request):
+    """
+    Get the complete system registry — all data sources, schemas, domains.
+
+    GET /api/layer2/grounding/registry/
+    """
+    from layer2.system_registry import get_system_registry
+    registry = get_system_registry()
+    return Response(registry.to_dict())
+
+
+@api_view(["GET"])
+def schema_introspect_view(request):
+    """
+    Run live schema introspection — actual table counts, column info.
+
+    GET /api/layer2/grounding/introspect/
+    """
+    from layer2.schema_introspector import SchemaIntrospector
+    introspector = SchemaIntrospector()
+    result = introspector.introspect_all()
+    return Response(result)
+
+
+@api_view(["GET"])
+def find_table_view(request):
+    """
+    Answer: "Which table contains this data?"
+
+    GET /api/layer2/grounding/find-table/?q=transformer+load
+    """
+    query = request.query_params.get("q", "")
+    if not query:
+        return Response(
+            {"error": "q parameter is required"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    from layer2.schema_introspector import SchemaIntrospector
+    introspector = SchemaIntrospector()
+    matches = introspector.find_table_for_data(query)
+    return Response({"query": query, "matches": matches})
+
+
+@api_view(["GET"])
+def grounding_audit_view(request):
+    """
+    Get recent grounding audit entries and defect summary.
+
+    GET /api/layer2/grounding/audit/
+    """
+    from layer2.grounding_audit import get_grounding_auditor
+    auditor = get_grounding_auditor()
+    return Response({
+        "recent_entries": auditor.get_recent_entries(limit=20),
+        "defect_summary": auditor.get_defect_summary(),
+    })
+
+
+@api_view(["POST"])
+def traversal_action_view(request):
+    """
+    Execute an explicit traversal action.
+
+    POST /api/layer2/grounding/traverse/
+    Body: {
+        "action": "list_databases" | "describe_table" | "preview_rows" |
+                  "check_entity_exists" | "get_metric_reading" | "get_alert_state",
+        "args": { ... action-specific arguments ... }
+    }
+    """
+    from layer2.traversal import TraversalEngine
+
+    action_name = request.data.get("action", "")
+    args = request.data.get("args", {})
+
+    engine = TraversalEngine()
+
+    action_map = {
+        "list_databases": lambda: engine.list_databases(),
+        "describe_table": lambda: engine.describe_table(args.get("table_name", "")),
+        "preview_rows": lambda: engine.preview_rows(
+            args.get("table_name", ""), args.get("limit", 5)
+        ),
+        "check_entity_exists": lambda: engine.check_entity_exists(
+            args.get("entity_name", "")
+        ),
+        "get_metric_reading": lambda: engine.get_metric_reading(
+            args.get("entity_name", ""), args.get("metric", "")
+        ),
+        "get_alert_state": lambda: engine.get_alert_state(
+            args.get("entity_name")
+        ),
+    }
+
+    if action_name not in action_map:
+        return Response(
+            {"error": f"Unknown action: {action_name}", "valid_actions": list(action_map.keys())},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    step = action_map[action_name]()
+    return Response({
+        "action": step.action,
+        "args": step.args,
+        "success": step.success,
+        "result": step.result,
+        "source_id": step.source_id,
+        "duration_ms": step.duration_ms,
+        "error": step.error,
+    })

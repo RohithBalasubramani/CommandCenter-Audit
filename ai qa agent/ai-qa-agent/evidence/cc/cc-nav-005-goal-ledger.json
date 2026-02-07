@@ -1,0 +1,13 @@
+{
+  "goal": "Verify the page renders correctly at desktop width (1440px) with a visible grid container, footer status bar, and at least one heading.",
+  "requiredOutcomes": [
+    "Grid container visible",
+    "Footer visible"
+  ],
+  "completedOutcomes": [
+    "Footer visible",
+    "Grid container visible"
+  ],
+  "stuckScore": 0,
+  "stepsSinceProgress": 4
+}

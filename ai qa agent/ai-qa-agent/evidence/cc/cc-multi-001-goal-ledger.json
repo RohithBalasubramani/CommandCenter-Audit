@@ -1,0 +1,9 @@
+{
+  "goal": "Conduct a 3-turn conversation: (1) \"Show equipment overview\", (2) \"Show pump details\", (3) \"Show pump alerts\". After each query, wait for widgets to appear before submitting the next. Verify widgets update with each query.",
+  "requiredOutcomes": [
+    "Widgets rendered after final query"
+  ],
+  "completedOutcomes": [],
+  "stuckScore": 10,
+  "stepsSinceProgress": 2
+}

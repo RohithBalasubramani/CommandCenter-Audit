@@ -1,0 +1,9 @@
+{
+  "goal": "Submit \"Show pumps and alerts\" to get multiple widgets. Hover over one widget and click the \"Dismiss widget\" button. Verify the widget count decreases or the widget disappears.",
+  "requiredOutcomes": [
+    "Page still functional"
+  ],
+  "completedOutcomes": [],
+  "stuckScore": 8,
+  "stepsSinceProgress": 6
+}

@@ -126,7 +126,8 @@
       ],
       "notes": "[SIZE ADJUSTMENT]\nnormal: 35vw×18vh → vw×44vh\nexpanded: 48vw×24vh → 48vw×44vh\nhero: 65vw×28vh → 65vw×044vw",
       "timestamp": 1769869105985,
-      "id": "1769869105985-vuvq9q"
+      "id": "1769869105985-vuvq9q",
+      "closed": true
     },
     {
       "scenario": "comparison",
@@ -137,7 +138,8 @@
       ],
       "notes": "[SIZE ADJUSTMENT]\nnormal: 35vw×18vh → 35vw×27vh",
       "timestamp": 1769869137253,
-      "id": "1769869137253-pt0hce"
+      "id": "1769869137253-pt0hce",
+      "closed": true
     },
     {
       "scenario": "distribution",
@@ -312,5 +314,5 @@
   ],
   "dashboards": [],
   "pages": [],
-  "exportedAt": "2026-01-31T14:31:17.852Z"
+  "exportedAt": "2026-02-07T10:43:35.146Z"
 }

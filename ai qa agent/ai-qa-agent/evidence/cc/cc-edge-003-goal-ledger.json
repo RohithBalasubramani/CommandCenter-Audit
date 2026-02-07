@@ -1,0 +1,11 @@
+{
+  "goal": "Submit a SQL injection attempt: \"SELECT * FROM users; DROP TABLE widgets; --\" as a query. Verify the system handles it safely without exposing any database information.",
+  "requiredOutcomes": [
+    "No SQL error on page"
+  ],
+  "completedOutcomes": [
+    "No SQL error on page"
+  ],
+  "stuckScore": 3,
+  "stepsSinceProgress": 3
+}

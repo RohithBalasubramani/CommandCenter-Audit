@@ -1,0 +1,11 @@
+{
+  "goal": "Submit \"Show supply chain status and vendor deliveries\" and verify supply chain widgets appear.",
+  "requiredOutcomes": [
+    "Widget rendered"
+  ],
+  "completedOutcomes": [
+    "Widget rendered"
+  ],
+  "stuckScore": 7,
+  "stepsSinceProgress": 6
+}

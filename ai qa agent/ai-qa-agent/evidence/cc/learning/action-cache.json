@@ -1,0 +1,482 @@
+[
+  {
+    "scenarioId": "cc-multi-002",
+    "actions": [
+      {
+        "type": "key"
+      },
+      {
+        "type": "click",
+        "target": {
+          "coordinates": {
+            "x": 1360,
+            "y": 64
+          }
+        }
+      }
+    ],
+    "success": true,
+    "timestamp": "2026-02-07T13:53:00.792Z"
+  },
+  {
+    "scenarioId": "cc-multi-003",
+    "actions": [
+      {
+        "type": "key"
+      },
+      {
+        "type": "click",
+        "target": {
+          "coordinates": {
+            "x": 1360,
+            "y": 65
+          }
+        }
+      },
+      {
+        "type": "key"
+      },
+      {
+        "type": "click",
+        "target": {
+          "coordinates": {
+            "x": 1360,
+            "y": 65
+          }
+        }
+      }
+    ],
+    "success": true,
+    "timestamp": "2026-02-07T13:55:16.350Z"
+  },
+  {
+    "scenarioId": "cc-multi-004",
+    "actions": [
+      {
+        "type": "key"
+      },
+      {
+        "type": "type",
+        "target": {
+          "placeholder": "Ask anything..."
+        },
+        "value": "Show everything available"
+      },
+      {
+        "type": "click",
+        "target": {
+          "role": "button",
+          "name": "Send"
+        }
+      },
+      {
+        "type": "click",
+        "target": {
+          "role": "button",
+          "name": "Close"
+        }
+      },
+      {
+        "type": "wait"
+      }
+    ],
+    "success": true,
+    "timestamp": "2026-02-07T13:58:40.852Z"
+  },
+  {
+    "scenarioId": "cc-intent-001",
+    "actions": [
+      {
+        "type": "key"
+      },
+      {
+        "type": "key"
+      },
+      {
+        "type": "click",
+        "target": {
+          "role": "button",
+          "name": "Text input (Ctrl+Shift+K)"
+        }
+      },
+      {
+        "type": "type",
+        "target": {
+          "placeholder": "Ask a question or give a command..."
+        },
+        "value": "Hello"
+      }
+    ],
+    "success": true,
+    "timestamp": "2026-02-07T14:00:51.986Z"
+  },
+  {
+    "scenarioId": "cc-intent-002",
+    "actions": [
+      {
+        "type": "key"
+      },
+      {
+        "type": "wait",
+        "value": "2000"
+      },
+      {
+        "type": "click",
+        "target": {
+          "coordinates": {
+            "x": 1360,
+            "y": 65
+          }
+        }
+      }
+    ],
+    "success": true,
+    "timestamp": "2026-02-07T14:02:53.496Z"
+  },
+  {
+    "scenarioId": "cc-intent-003",
+    "actions": [
+      {
+        "type": "key"
+      },
+      {
+        "type": "type",
+        "target": {
+          "placeholder": "Ask anything..."
+        },
+        "value": "What is the status of transformer TR-001?"
+      },
+      {
+        "type": "click",
+        "target": {
+          "role": "button",
+          "name": "Send"
+        }
+      }
+    ],
+    "success": true,
+    "timestamp": "2026-02-07T14:04:05.502Z"
+  },
+  {
+    "scenarioId": "cc-intent-004",
+    "actions": [
+      {
+        "type": "click",
+        "target": {
+          "role": "button",
+          "name": "ACKNOWLEDGE"
+        }
+      },
+      {
+        "type": "key"
+      },
+      {
+        "type": "navigate"
+      },
+      {
+        "type": "click",
+        "target": {
+          "role": "button",
+          "name": "ACKNOWLEDGE"
+        }
+      }
+    ],
+    "success": true,
+    "timestamp": "2026-02-07T14:05:21.335Z"
+  },
+  {
+    "scenarioId": "cc-intent-005",
+    "actions": [
+      {
+        "type": "key"
+      },
+      {
+        "type": "wait"
+      }
+    ],
+    "success": true,
+    "timestamp": "2026-02-07T14:06:12.860Z"
+  },
+  {
+    "scenarioId": "cc-edge-001",
+    "actions": [
+      {
+        "type": "key"
+      },
+      {
+        "type": "click",
+        "target": {
+          "placeholder": "Ask anything..."
+        }
+      },
+      {
+        "type": "wait"
+      },
+      {
+        "type": "wait"
+      }
+    ],
+    "success": true,
+    "timestamp": "2026-02-07T14:08:17.228Z"
+  },
+  {
+    "scenarioId": "cc-edge-002",
+    "actions": [
+      {
+        "type": "click",
+        "target": {
+          "role": "button",
+          "name": "Close"
+        }
+      },
+      {
+        "type": "key"
+      },
+      {
+        "type": "key"
+      },
+      {
+        "type": "key"
+      }
+    ],
+    "success": true,
+    "timestamp": "2026-02-07T14:12:00.258Z"
+  },
+  {
+    "scenarioId": "cc-edge-003",
+    "actions": [
+      {
+        "type": "key"
+      },
+      {
+        "type": "type",
+        "target": {
+          "placeholder": "Ask anything..."
+        },
+        "value": "SELECT * FROM users; DROP TABLE widgets; --"
+      },
+      {
+        "type": "key"
+      }
+    ],
+    "success": true,
+    "timestamp": "2026-02-07T14:13:07.874Z"
+  },
+  {
+    "scenarioId": "cc-edge-004",
+    "actions": [
+      {
+        "type": "key"
+      },
+      {
+        "type": "click",
+        "target": {
+          "coordinates": {
+            "x": 1360,
+            "y": 107
+          }
+        }
+      }
+    ],
+    "success": true,
+    "timestamp": "2026-02-07T14:14:33.953Z"
+  },
+  {
+    "scenarioId": "cc-edge-005",
+    "actions": [
+      {
+        "type": "key"
+      },
+      {
+        "type": "type",
+        "target": {
+          "placeholder": "Ask anything..."
+        },
+        "value": "Show pumps"
+      },
+      {
+        "type": "key"
+      },
+      {
+        "type": "key"
+      },
+      {
+        "type": "type",
+        "target": {
+          "placeholder": "Ask anything..."
+        },
+        "value": "Show alerts"
+      },
+      {
+        "type": "key"
+      },
+      {
+        "type": "key"
+      }
+    ],
+    "success": true,
+    "timestamp": "2026-02-07T14:16:25.754Z"
+  },
+  {
+    "scenarioId": "cc-perf-001",
+    "actions": [
+      {
+        "type": "key"
+      },
+      {
+        "type": "click",
+        "target": {
+          "role": "button",
+          "name": "Text input (Ctrl+Shift+K)"
+        }
+      },
+      {
+        "type": "wait"
+      }
+    ],
+    "success": true,
+    "timestamp": "2026-02-07T14:18:05.848Z"
+  },
+  {
+    "scenarioId": "cc-perf-002",
+    "actions": [
+      {
+        "type": "key"
+      },
+      {
+        "type": "type",
+        "target": {
+          "placeholder": "Ask anything..."
+        },
+        "value": "Show pumps"
+      },
+      {
+        "type": "key"
+      },
+      {
+        "type": "key"
+      },
+      {
+        "type": "type",
+        "target": {
+          "placeholder": "Ask anything..."
+        },
+        "value": "Show alerts"
+      },
+      {
+        "type": "key"
+      }
+    ],
+    "success": true,
+    "timestamp": "2026-02-07T14:19:33.698Z"
+  },
+  {
+    "scenarioId": "cc-perf-003",
+    "actions": [
+      {
+        "type": "click",
+        "target": {
+          "role": "button",
+          "name": "Text input (Ctrl+Shift+K)"
+        }
+      },
+      {
+        "type": "type",
+        "target": {
+          "placeholder": "Ask anything..."
+        },
+        "value": "Show comprehensive overview with all available data"
+      },
+      {
+        "type": "click",
+        "target": {
+          "role": "button",
+          "name": "Send"
+        }
+      },
+      {
+        "type": "key"
+      },
+      {
+        "type": "click",
+        "target": {
+          "role": "button",
+          "name": "×"
+        }
+      }
+    ],
+    "success": true,
+    "timestamp": "2026-02-07T14:23:23.040Z"
+  },
+  {
+    "scenarioId": "cc-perf-004",
+    "actions": [
+      {
+        "type": "click",
+        "target": {
+          "role": "button",
+          "name": "×"
+        }
+      },
+      {
+        "type": "key"
+      },
+      {
+        "type": "key"
+      },
+      {
+        "type": "navigate"
+      },
+      {
+        "type": "click",
+        "target": {
+          "coordinates": {
+            "x": 1850,
+            "y": 400
+          }
+        }
+      }
+    ],
+    "success": true,
+    "timestamp": "2026-02-07T14:26:30.641Z"
+  },
+  {
+    "scenarioId": "cc-voice-001",
+    "actions": [
+      {
+        "type": "verify"
+      },
+      {
+        "type": "verify"
+      }
+    ],
+    "success": true,
+    "timestamp": "2026-02-07T14:35:31.461Z"
+  },
+  {
+    "scenarioId": "cc-voice-002",
+    "actions": [
+      {
+        "type": "click",
+        "target": {
+          "text": "PTT"
+        }
+      }
+    ],
+    "success": true,
+    "timestamp": "2026-02-07T14:35:57.711Z"
+  },
+  {
+    "scenarioId": "cc-voice-003",
+    "actions": [
+      {
+        "type": "verify"
+      },
+      {
+        "type": "verify"
+      }
+    ],
+    "success": true,
+    "timestamp": "2026-02-07T14:39:47.512Z"
+  }
+]

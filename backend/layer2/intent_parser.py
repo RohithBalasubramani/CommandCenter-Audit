@@ -291,10 +291,14 @@ class IntentParser:
                 "generator", "panel", "ups", "chiller", "ahu", "cooling",
                 "compressor", "hvac", "consumption", "load", "kva", "kw",
                 "harmonic", "thd", "power factor", "water", "nitrogen",
+                "equipment", "maintenance", "efficiency", "plant", "health",
+                "machine", "production", "operational", "runtime", "bearing",
+                "vibration", "flow rate", "oee", "scada", "plc",
             ],
             "supply": [
                 "inventory", "stock", "supplier", "vendor", "purchase",
                 "procurement", "shipment", "delivery", "warehouse", "logistics",
+                "spare", "parts", "reorder", "material", "shortage",
             ],
             "people": [
                 "employee", "worker", "staff", "team", "shift", "schedule",

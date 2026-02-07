@@ -1,0 +1,11 @@
+{
+  "goal": "Open text input, type \"Show pump status\", submit, and verify that at least one widget card appears in the grid.",
+  "requiredOutcomes": [
+    "At least one widget rendered"
+  ],
+  "completedOutcomes": [
+    "At least one widget rendered"
+  ],
+  "stuckScore": 4,
+  "stepsSinceProgress": 5
+}

@@ -1,0 +1,62 @@
+{
+  "name": "@neurareport/ai-rl-agent",
+  "version": "1.0.0",
+  "description": "Autonomous RL agent for Command Center — evaluates AI responses, submits training feedback, manages RL lifecycle",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf dist",
+    "prepublishOnly": "npm run build",
+    "test:rl": "npx tsx src/rl-runner.ts",
+    "test:rl:evaluate": "npx tsx src/rl-runner.ts --mode evaluate",
+    "test:rl:train": "npx tsx src/rl-runner.ts --mode train-cycle",
+    "test:rl:status": "npx tsx src/rl-runner.ts --mode status",
+    "test:rl:weights": "npx tsx src/rl-runner.ts --mode weights",
+    "test:rl:headed": "npx tsx src/rl-runner.ts --headed",
+    "test:rl:list": "npx tsx src/rl-runner.ts --list"
+  },
+  "keywords": [
+    "ai",
+    "reinforcement-learning",
+    "rl",
+    "training",
+    "evaluation",
+    "playwright",
+    "claude",
+    "llm",
+    "agent",
+    "dpo",
+    "lora"
+  ],
+  "author": "NeuraReport",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "peerDependencies": {
+    "@playwright/test": ">=1.40.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@types/node": "^20.19.32",
+    "rimraf": "^5.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.9.3"
+  }
+}

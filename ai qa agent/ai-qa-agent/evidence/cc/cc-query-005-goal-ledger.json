@@ -1,0 +1,11 @@
+{
+  "goal": "Submit \"Show all active alerts\" and verify alert widgets appear with severity indicators.",
+  "requiredOutcomes": [
+    "Widget rendered"
+  ],
+  "completedOutcomes": [
+    "Widget rendered"
+  ],
+  "stuckScore": 10,
+  "stepsSinceProgress": 6
+}

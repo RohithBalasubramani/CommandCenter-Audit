@@ -1,0 +1,11 @@
+{
+  "goal": "Submit \"Show workforce overview and who is on shift\" and verify people-related widgets appear.",
+  "requiredOutcomes": [
+    "Widget rendered"
+  ],
+  "completedOutcomes": [
+    "Widget rendered"
+  ],
+  "stuckScore": 1,
+  "stepsSinceProgress": 2
+}

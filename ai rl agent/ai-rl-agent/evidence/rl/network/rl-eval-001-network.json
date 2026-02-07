@@ -1,0 +1,278 @@
+[
+  {
+    "method": "POST",
+    "url": "http://localhost:8100/api/layer2/orchestrate/",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"query_id\":\"935d7ef5-b68c-49c8-86f6-192d8e107805\",\"voice_response\":\"The Energy Peak Threshold has been exceeded, with a current value of 12.5 kilowatts, exceeding the threshold of 10 kilowatts. This is shown on our \\\"Energy Peak Threshold Exceeded\\\" dashboard, which displays trend data and comparisons for key energy metrics. The dashboard also lists active alerts, including a power factor warning on VFD Panel 11 with a value of 0.8, below the acceptable limit of 0.85.\",\"filler_text\":\"Checking t",
+    "requestBody": "{\"transcript\":\"Tell me more about Energy Peak Threshold Exceeded\",\"session_id\":\"session-1770472285786-vx6ttlqjh\",\"context\":{}}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:3100/api/dev-log",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"ok\":true}",
+    "requestBody": "{\"level\":\"debug\",\"args\":[\"[lifecycle] alerts: resized to 698x178\"],\"source\":\"WidgetWithLifecycle.tsx:25\"}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:3100/api/dev-log",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"ok\":true}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:3100/api/dev-log",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"ok\":true}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:3100/api/dev-log",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"ok\":true}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:3100/api/dev-log",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"ok\":true}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:3100/api/dev-log",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"ok\":true}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:3100/api/dev-log",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"ok\":true}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:3100/api/dev-log",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"ok\":true}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:3100/api/dev-log",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"ok\":true}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:3100/api/dev-log",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"ok\":true}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:3100/api/dev-log",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"ok\":true}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:3100/api/dev-log",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"ok\":true}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:3100/api/dev-log",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"ok\":true}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:3100/api/dev-log",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"ok\":true}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:3100/api/dev-log",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"ok\":true}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:3100/api/dev-log",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"ok\":true}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:3100/api/dev-log",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"ok\":true}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:3100/api/dev-log",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"ok\":true}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:3100/api/dev-log",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"ok\":true}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:3100/api/dev-log",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"ok\":true}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:3100/api/dev-log",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"ok\":true}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:3100/api/dev-log",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"ok\":true}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:3100/api/dev-log",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"ok\":true}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:3100/api/dev-log",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"ok\":true}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:3100/api/dev-log",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"ok\":true}",
+    "requestBody": "{\"level\":\"debug\",\"args\":[\"[lifecycle] distribution: resized to 698x286\"],\"source\":\"WidgetWithLifecycle.tsx:25\"}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:3100/api/dev-log",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"ok\":true}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:3100/api/dev-log",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"ok\":true}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:3100/api/dev-log",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"ok\":true}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:3100/api/dev-log",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"ok\":true}",
+    "requestBody": "{\"level\":\"debug\",\"args\":[\"[lifecycle] trend: unmounted after 49217ms (8 renders)\"],\"source\":\"WidgetWithLifecycle.tsx:32\"}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:3100/api/dev-log",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"ok\":true}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:3100/api/dev-log",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"ok\":true}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "POST",
+    "url": "http://localhost:3100/api/dev-log",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"ok\":true}",
+    "contentType": "application/json"
+  },
+  {
+    "method": "GET",
+    "url": "http://localhost:8100/api/layer2/triggers/?since=2026-02-07T13%3A51%3A55.794845%2B00%3A00",
+    "status": 200,
+    "responseTime": 0,
+    "responsePreview": "{\"triggers\":[],\"timestamp\":\"2026-02-07T13:52:25.797559+00:00\"}",
+    "contentType": "application/json"
+  }
+]
