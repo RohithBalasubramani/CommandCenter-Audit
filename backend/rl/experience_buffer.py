@@ -206,6 +206,10 @@ class ExperienceBuffer:
                 exp.correction_text = feedback["correction"]
 
             logger.debug(f"Updated feedback for {query_id}: {feedback}")
+
+            # CRITICAL FIX: Persist feedback to disk immediately
+            self._save_to_disk()
+
             return True
 
     def get_by_query_id(self, query_id: str) -> Optional[Experience]:

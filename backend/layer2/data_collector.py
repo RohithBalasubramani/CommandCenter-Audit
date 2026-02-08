@@ -11,6 +11,7 @@ with "select widgets → build targeted queries → collect in parallel → form
 
 import logging
 import re
+import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Optional
 
@@ -98,6 +99,7 @@ class SchemaDataCollector:
 
     def __init__(self):
         self._pipeline: Optional[IndustrialRAGPipeline] = None
+        self._kpi_lock = threading.Lock()
 
     @property
     def pipeline(self) -> IndustrialRAGPipeline:
@@ -161,6 +163,21 @@ class SchemaDataCollector:
 
         return [r for r in results if r is not None]
 
+    # Pattern for extracting equipment entities from natural language queries
+    # e.g., "Transformer One and Transformer Two" -> ["Transformer One", "Transformer Two"]
+    _ENTITY_SPLIT_RE = re.compile(
+        r'(?:^|(?<=\s))'                              # start or after space
+        r'((?:main\s+|dry\s+type\s+)?'                # optional prefix
+        r'(?:transformer|generator|genset|dg|ups)'     # equipment keyword
+        r'(?:\s+(?:one|two|three|four|five|six|seven|eight|nine|ten|\d+))?)',  # optional number
+        re.IGNORECASE
+    )
+
+    def _extract_entities_from_query(self, query: str) -> list[str]:
+        """Extract equipment entity mentions from a natural language query."""
+        matches = self._ENTITY_SPLIT_RE.findall(query)
+        return [m.strip() for m in matches if m.strip()]
+
     def _collect_one(self, widget: WidgetPlanItem, query: str) -> dict:
         """Collect data for a single widget based on its schema and data_request."""
         schema = WIDGET_SCHEMAS.get(widget.scenario)
@@ -174,6 +191,13 @@ class SchemaDataCollector:
         # AUDIT FIX: Ensure metric is a string (LLM sometimes returns a list)
         raw_metric = data_request.get("metric", "")
         metric = raw_metric[0] if isinstance(raw_metric, list) and raw_metric else (raw_metric if isinstance(raw_metric, str) else "")
+
+        # When LLM doesn't fill data_request, extract entities from query text
+        if not entities:
+            extracted = self._extract_entities_from_query(query)
+            if extracted:
+                entities = extracted
+                logger.info(f"Extracted entities from query: {entities}")
 
         # Choose collection to search
         collections = data_request.get("collections", schema.get("default_collections", ["equipment"]))
@@ -224,6 +248,9 @@ class SchemaDataCollector:
     # to avoid duplicate data across multiple KPI widgets
     _kpi_seen_entities: set = set()
 
+    # Equipment type keywords for direct table lookup (bypass energy_readings)
+    _EQUIPMENT_KEYWORDS = {"transformer", "generator", "genset", "dg", "ups"}
+
     def _collect_single_metric(self, query: str, entities: list, metric: str, collections: list) -> dict:
         """Collect a single metric for KPI widget.
 
@@ -231,7 +258,16 @@ class SchemaDataCollector:
         entities already shown in other KPIs to ensure diversity.
         """
         vs = self.pipeline.vector_store
-        entity = entities[0] if entities else ""
+        # Pick first entity not yet shown in another KPI widget (thread-safe)
+        entity = ""
+        with self._kpi_lock:
+            for e in (entities or []):
+                if e.lower() not in self._kpi_seen_entities:
+                    entity = e
+                    self._kpi_seen_entities.add(e.lower())
+                    break
+        if not entity:
+            entity = entities[0] if entities else ""
 
         # Map common metric aliases to SQL column names
         metric_aliases = {
@@ -239,8 +275,27 @@ class SchemaDataCollector:
             "load": "power_kw", "demand": "max_demand_kw",
             "power_factor": "power_factor", "pf": "power_factor",
             "voltage": "voltage_avg", "frequency": "frequency",
+            "temperature": "power_kw", "temperature_avg": "power_kw",
         }
         resolved_metric = metric_aliases.get((metric or "").lower().strip(), metric)
+
+        # If entity is a known equipment type (transformer, generator, etc.),
+        # try equipment tables FIRST before energy_readings
+        entity_lower = entity.lower()
+        query_lower = query.lower()
+        is_equipment = any(kw in entity_lower or kw in query_lower for kw in self._EQUIPMENT_KEYWORDS)
+        if is_equipment:
+            # Default to power_kw for equipment when no specific metric
+            if not resolved_metric or resolved_metric not in ("power_kw", "voltage_avg", "power_factor", "frequency"):
+                resolved_metric = "power_kw"
+            equip_result = self._try_equipment_power_data(entity or query, resolved_metric)
+            if equip_result:
+                # Mark this entity as seen for KPI dedup
+                label = equip_result.get("demoData", {}).get("label", "")
+                if label:
+                    self._kpi_seen_entities.add(label.lower())
+                self._kpi_seen_entities.add(entity_lower)
+                return equip_result
 
         # If a specific energy metric is requested, try SQL
         energy_metrics = {"power_kw", "power_factor", "voltage_avg", "frequency",
@@ -293,6 +348,8 @@ class SchemaDataCollector:
     def _collect_kpi_from_energy_sql(self, entity: str, metric: str) -> dict:
         """Collect a KPI value directly from energy_readings SQL.
 
+        Falls back to equipment tables (transformers, generators, etc.) when
+        no matching meter is found in energy_readings.
         Ensures diversity by tracking which meters have been used.
         """
         from django.db import connection
@@ -340,8 +397,139 @@ class SchemaDataCollector:
                     }
         except Exception as e:
             logger.warning(f"KPI energy SQL failed: {e}")
+
+        # Fallback: try equipment tables when energy_readings has no match
+        if entity:
+            equip_result = self._try_equipment_power_data(entity, metric)
+            if equip_result:
+                return equip_result
+
         return {"demoData": {"label": entity or "Unknown", "value": "N/A", "unit": "",
                              "_synthetic": True, "_data_source": "no_data_fallback"}}
+
+    def _try_equipment_power_data(self, entity: str, metric: str) -> Optional[dict]:
+        """Try to find power/energy data from equipment tables (transformers, generators, etc.).
+
+        Handles fuzzy name matching: 'Transformer One' -> 'Main Transformer 1',
+        'Transformer 2' -> 'Main Transformer 2', etc.
+        """
+        from django.db import connection
+
+        # Normalize spoken numbers to digits for matching
+        number_words = {
+            "one": "1", "two": "2", "three": "3", "four": "4", "five": "5",
+            "six": "6", "seven": "7", "eight": "8", "nine": "9", "ten": "10",
+            "eleven": "11", "twelve": "12", "thirteen": "13", "fourteen": "14", "fifteen": "15",
+        }
+        normalized = entity.lower().strip()
+        for word, digit in number_words.items():
+            normalized = re.sub(rf'\b{word}\b', digit, normalized)
+
+        # Extract the trailing number if present (e.g., "transformer 1" -> "1")
+        num_match = re.search(r'(\d+)\s*$', normalized)
+        entity_number = num_match.group(1) if num_match else ""
+
+        # Map metric to equipment table columns
+        equipment_tables = [
+            {
+                "table": "industrial_transformer",
+                "keywords": ["transformer"],
+                "columns": {
+                    "power_kw": ("current_load_kw", "kW"),
+                    "voltage_avg": ("output_voltage", "V"),
+                    "power_factor": ("load_percent", "%"),
+                },
+                "default_col": ("current_load_kw", "kW"),
+            },
+            {
+                "table": "industrial_dieselgenerator",
+                "keywords": ["generator", "dg", "genset"],
+                "columns": {
+                    "power_kw": ("current_load_kw", "kW"),
+                    "voltage_avg": ("output_voltage", "V"),
+                    "frequency": ("output_frequency", "Hz"),
+                },
+                "default_col": ("current_load_kw", "kW"),
+            },
+            {
+                "table": "industrial_ups",
+                "keywords": ["ups"],
+                "columns": {
+                    "power_kw": ("current_load_kw", "kW"),
+                    "voltage_avg": ("output_voltage", "V"),
+                },
+                "default_col": ("current_load_kw", "kW"),
+            },
+        ]
+
+        for tbl in equipment_tables:
+            # Check if entity mentions this equipment type
+            if not any(kw in normalized for kw in tbl["keywords"]):
+                continue
+
+            col_info = tbl["columns"].get(metric, tbl["default_col"])
+            col_name, unit = col_info
+
+            try:
+                with connection.cursor() as c:
+                    # Build match patterns from most specific to least
+                    like_patterns = []
+                    if entity_number:
+                        # Exact number at end: "% 1" matches "Main Transformer 1" but not "11"
+                        like_patterns.append(f"% {entity_number}")
+                        # Also try "% {N}" with trailing space variants
+                        like_patterns.append(f"%{entity_number}")
+                    # Full normalized name match
+                    like_patterns.append(f"%{normalized}%")
+
+                    # Determine if user specified a subtype (e.g., "dry type", "oil")
+                    # If not, prefer "Main" prefixed names for transformers
+                    has_subtype = any(
+                        st in normalized
+                        for st in ("dry type", "dry-type", "oil", "cast resin", "pad mount")
+                    )
+
+                    for pattern in like_patterns:
+                        c.execute(f"""
+                            SELECT name, {col_name}, health_score, status
+                            FROM {tbl['table']}
+                            WHERE LOWER(name) LIKE %s
+                            ORDER BY
+                                CASE WHEN LOWER(name) LIKE 'main %%' THEN 0 ELSE 1 END,
+                                name
+                            LIMIT 1
+                        """, [pattern])
+                        row = c.fetchone()
+
+                        # If user specified a subtype, re-query with subtype filter
+                        if has_subtype and entity_number:
+                            subtype_pattern = f"%{normalized}%"
+                            c.execute(f"""
+                                SELECT name, {col_name}, health_score, status
+                                FROM {tbl['table']}
+                                WHERE LOWER(name) LIKE %s
+                                ORDER BY name LIMIT 1
+                            """, [subtype_pattern])
+                            sub_row = c.fetchone()
+                            if sub_row:
+                                row = sub_row
+
+                        if row:
+                            val = round(float(row[1]), 1) if row[1] is not None else "N/A"
+                            state = "warning" if row[3] in ("fault", "offline", "stopped") else "normal"
+                            logger.info(f"Equipment SQL: found {row[0]} in {tbl['table']} ({col_name}={val})")
+                            return {
+                                "demoData": {
+                                    "label": row[0],
+                                    "value": str(val),
+                                    "unit": unit,
+                                    "state": state,
+                                }
+                            }
+            except Exception as e:
+                logger.warning(f"Equipment power fallback failed for {tbl['table']}: {e}")
+
+        return None
 
     def _collect_alerts(self, query: str, entities: list) -> dict:
         """Collect alerts for alerts widget."""
@@ -385,13 +573,60 @@ class SchemaDataCollector:
         return {"demoData": alerts}
 
     def _collect_comparison(self, query: str, entities: list, metric: str, collections: list) -> dict:
-        """Collect comparison data for two entities."""
-        vs = self.pipeline.vector_store
-        coll = collections[0] if collections else EQUIPMENT_COLLECTION
+        """Collect comparison data for two entities.
 
+        For equipment entities (transformers, generators), uses direct SQL
+        to get accurate power/load data instead of relying on vector search.
+        """
         # Need at least 2 entities
         entity_a = entities[0] if len(entities) > 0 else ""
         entity_b = entities[1] if len(entities) > 1 else ""
+
+        # Map metric aliases
+        metric_aliases = {
+            "power": "power_kw", "load": "power_kw", "consumption": "power_kw",
+            "voltage": "voltage_avg", "pf": "power_factor",
+        }
+        resolved_metric = metric_aliases.get((metric or "").lower().strip(), metric)
+
+        # Try equipment tables first for known equipment types
+        query_lower = query.lower()
+        is_equipment = any(kw in query_lower or kw in entity_a.lower() or kw in entity_b.lower()
+                           for kw in self._EQUIPMENT_KEYWORDS)
+        if is_equipment:
+            # Default to power_kw for equipment queries when metric is empty
+            if not resolved_metric or resolved_metric not in ("power_kw", "voltage_avg", "power_factor", "frequency"):
+                resolved_metric = "power_kw"
+            equip_a = self._try_equipment_power_data(entity_a or query, resolved_metric) if entity_a else None
+            equip_b = self._try_equipment_power_data(entity_b or query, resolved_metric) if entity_b else None
+
+            if equip_a and equip_b:
+                da = equip_a.get("demoData", {})
+                db = equip_b.get("demoData", {})
+                val_a = da.get("value", "N/A")
+                val_b = db.get("value", "N/A")
+                unit = da.get("unit", db.get("unit", ""))
+                try:
+                    delta = float(val_a) - float(val_b)
+                    delta_pct = (delta / float(val_b) * 100) if float(val_b) != 0 else 0
+                except (ValueError, TypeError):
+                    delta, delta_pct = 0, 0
+                return {
+                    "demoData": {
+                        "label": f"{metric or 'Power'}".replace("_", " ").title(),
+                        "unit": unit,
+                        "labelA": da.get("label", entity_a),
+                        "valueA": val_a,
+                        "labelB": db.get("label", entity_b),
+                        "valueB": val_b,
+                        "delta": round(delta, 2),
+                        "deltaPct": round(delta_pct, 1),
+                    }
+                }
+
+        # Fallback: vector search
+        vs = self.pipeline.vector_store
+        coll = collections[0] if collections else EQUIPMENT_COLLECTION
 
         result_a = vs.search(coll, f"{entity_a} {metric}".strip() or query, n_results=1)
         result_b = vs.search(coll, f"{entity_b} {metric}".strip() or query, n_results=1) if entity_b else []

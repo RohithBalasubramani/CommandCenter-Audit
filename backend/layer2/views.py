@@ -423,6 +423,7 @@ def rl_history(request):
     from collections import Counter
 
     from rl.config import PROJECT_DIR, TRAINING_DATA_DIR, CHECKPOINTS_DIR
+    from rl.continuous import get_rl_system
 
     limit = min(int(request.query_params.get("limit", 500)), 2000)
 
@@ -438,13 +439,24 @@ def rl_history(request):
         "query_details": [],
     }
 
-    # ── 1. Experience buffer ──────────────────────────────────────
-    buffer_path = TRAINING_DATA_DIR / "experience_buffer.json"
-    if buffer_path.exists():
-        try:
-            raw = _json.loads(buffer_path.read_text())
-            experiences = raw.get("experiences", [])[-limit:]
+    # ── 1. Experience buffer (read from live in-memory buffer) ────
+    try:
+        rl = get_rl_system()
+        live_experiences = rl.buffer.get_recent(limit)
+        experiences = [exp.to_dict() for exp in live_experiences]
+    except Exception:
+        # Fallback to disk if RL system not available
+        experiences = []
+        buffer_path = TRAINING_DATA_DIR / "experience_buffer.json"
+        if buffer_path.exists():
+            try:
+                raw = _json.loads(buffer_path.read_text())
+                experiences = raw.get("experiences", [])[-limit:]
+            except Exception:
+                pass
 
+    if experiences:
+        try:
             ratings = Counter()
             intents = Counter()
             scenarios = Counter()
@@ -600,12 +612,10 @@ def rl_history(request):
             except Exception:
                 pass
 
-        # Read experiences for detail rows
-        buffer_path2 = TRAINING_DATA_DIR / "experience_buffer.json"
-        if buffer_path2.exists():
-            raw2 = _json.loads(buffer_path2.read_text())
-            experiences2 = raw2.get("experiences", [])[-limit:]
+        # Read experiences for detail rows (reuse in-memory buffer)
+        experiences2 = experiences  # Already fetched from live buffer above
 
+        if experiences2:
             # Compute aggregates for relative comparison
             all_times = [
                 e.get("processing_time_ms", 0)

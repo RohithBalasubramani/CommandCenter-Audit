@@ -1,0 +1,121 @@
+# Claude Behavioral Replication Agent Configuration
+
+# Data paths
+data:
+  traces_dir: "/home/rohith/desktop/CommandCenter/claude-rl-agent/data/traces"
+  datasets_dir: "/home/rohith/desktop/CommandCenter/claude-rl-agent/data/datasets"
+  models_dir: "/home/rohith/desktop/CommandCenter/claude-rl-agent/data/models"
+
+# Data collection
+collection:
+  min_traces_for_training: 500
+  min_reasoning_steps: 2
+  require_multi_step: true
+  
+  # Quality filters
+  skip_short_responses: true  # Skip responses <50 words
+  skip_failed_tasks: true     # Skip traces with errors
+  skip_minimal_exploration: false  # Allow minimal exploration traces
+
+# Training: Phase 1 (Behavioral Cloning / SFT)
+sft:
+  base_model: "unsloth/Meta-Llama-3.1-8B-Instruct"
+  output_model_name: "llama-claude-bc"
+  
+  # LoRA configuration
+  lora_r: 16
+  lora_alpha: 32
+  lora_dropout: 0.05
+  lora_target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+    - gate_proj
+    - up_proj
+    - down_proj
+  
+  # Training parameters
+  learning_rate: 5e-5
+  batch_size: 4
+  gradient_accumulation_steps: 4
+  num_epochs: 3
+  max_length: 4096  # Longer for tool chains
+  warmup_ratio: 0.1
+  
+  # QLoRA quantization
+  load_in_4bit: true
+  bnb_4bit_compute_dtype: "bfloat16"
+  bnb_4bit_quant_type: "nf4"
+
+# Training: Phase 2 (PPO / RL)
+ppo:
+  base_model_from_sft: true
+  
+  # PPO parameters
+  learning_rate: 1e-5
+  batch_size: 8
+  mini_batch_size: 2
+  ppo_epochs: 4
+  init_kl_coef: 0.2  # KL penalty to stay close to Claude's policy
+  target_kl: 0.1
+  cliprange: 0.2
+  vf_coef: 0.1
+  
+  # Behavioral reward weights
+  reward_weights:
+    constraint_detection: 0.25
+    tool_use_alignment: 0.30
+    self_correction: 0.15
+    outcome_equivalence: 0.20
+    reasoning_depth: 0.10
+
+# Adversarial mining
+adversarial:
+  enabled: true
+  sample_size: 100  # Prompts to test per iteration
+  divergence_threshold: 0.7  # Retrain if reward <0.7
+  mutation_strategies:
+    - edge_cases
+    - ambiguous_queries
+    - tool_chain_challenges
+    - constraint_detection
+    - error_recovery
+
+# Deployment
+deployment:
+  export_format: "gguf"
+  quantization: "q4_k_m"  # Balanced quality/size
+  ollama_model_name: "cc-claude-agent"
+  
+  # Quality gates
+  min_behavioral_reward: 0.80
+  min_indistinguishability: 0.45  # Users can't distinguish >45%
+  
+  # Gradual rollout
+  rollout_stages:
+    - percentage: 5
+      duration_days: 3
+    - percentage: 20
+      duration_days: 7
+    - percentage: 50
+      duration_days: 14
+    - percentage: 80
+      duration_days: 30
+
+# Testing
+testing:
+  blind_ab_test_samples: 50
+  evaluation_prompts_per_category: 10
+  categories:
+    - database_queries
+    - file_operations
+    - complex_reasoning
+    - tool_chaining
+    - error_recovery
+
+# Logging
+logging:
+  level: "INFO"
+  log_file: "/home/rohith/desktop/CommandCenter/claude-rl-agent/logs/agent.log"
+  log_format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

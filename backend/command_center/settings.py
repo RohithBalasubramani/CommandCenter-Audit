@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'industrial',
     'actions',
     'feedback',
+    'rl',  # RL training system
 ]
 
 MIDDLEWARE = [
@@ -84,8 +85,24 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+    },
+    'timeseries': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'command_center_data',
+        'USER': 'postgres',
+        'PASSWORD': '',
+        'HOST': 'localhost',
+        'PORT': '5432',
+        'OPTIONS': {
+            'options': '-c search_path=public'
+        },
+        # Connection pooling for high-throughput queries
+        'CONN_MAX_AGE': 600,
     }
 }
+
+# Database router for multi-database setup
+DATABASE_ROUTERS = ['command_center.db_router.TimeSeriesRouter']
 
 
 # Password validation
