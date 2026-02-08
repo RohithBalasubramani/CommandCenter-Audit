@@ -525,8 +525,11 @@ class SchemaDataCollector:
     _ENTITY_SPLIT_RE = re.compile(
         r'(?:^|(?<=\s))'                              # start or after space
         r'((?:main\s+|dry\s+type\s+)?'                # optional prefix
-        r'(?:transformer|generator|genset|dg|ups)'     # equipment keyword
-        r'(?:\s+(?:one|two|three|four|five|six|seven|eight|nine|ten|\d+))?)',  # optional number
+        r'(?:transformer|trafo|generator|genset|dg|ups|chiller|ahu|'  # equipment keywords
+        r'cooling\s+tower|pump|compressor|motor|energy\s+meter|meter|'
+        r'mcc|pcc|apfc|vfd|plc|ats|changeover|'
+        r'trf|ct|em|lt_\w+)'                          # table prefix forms
+        r'(?:[_\s]+(?:one|two|three|four|five|six|seven|eight|nine|ten|\d+))?)',  # optional number
         re.IGNORECASE
     )
 
@@ -606,7 +609,12 @@ class SchemaDataCollector:
     _kpi_seen_entities: set = set()
 
     # Equipment type keywords for direct table lookup (bypass energy_readings)
-    _EQUIPMENT_KEYWORDS = {"transformer", "generator", "genset", "dg", "ups"}
+    _EQUIPMENT_KEYWORDS = {
+        "transformer", "trafo", "generator", "genset", "dg", "diesel",
+        "ups", "chiller", "ahu", "air handling", "cooling tower",
+        "pump", "compressor", "motor", "energy meter", "meter",
+        "mcc", "pcc", "apfc", "vfd", "plc", "ats", "changeover",
+    }
 
     def _collect_single_metric(self, query: str, entities: list, metric: str, collections: list) -> dict:
         """Collect a single metric for KPI widget.
@@ -765,28 +773,46 @@ class SchemaDataCollector:
                              "_synthetic": True, "_data_source": "no_data_fallback"}}
 
     def _try_equipment_power_data(self, entity: str, metric: str) -> Optional[dict]:
-        """Try to find power/energy data from equipment tables (transformers, generators, etc.).
+        """Try to find power/energy data from PostgreSQL timeseries tables.
 
-        Handles fuzzy name matching: 'Transformer One' -> 'Main Transformer 1',
-        'Transformer 2' -> 'Main Transformer 2', etc.
+        PRIMARY: Queries command_center_data PostgreSQL (276GB, 357 equipment tables)
+        FALLBACK: Queries Django SQLite industrial_* metadata tables
+
+        Handles fuzzy name matching: 'Transformer One' -> trf_001,
+        'Transformer 2' -> trf_002, 'DG 3' -> dg_003, etc.
         """
+        # ── PRIMARY: PostgreSQL timeseries (command_center_data) ──
+        pg_result = self._resolve_and_query_entity(entity, metric)
+        if pg_result:
+            logger.info(
+                f"PG Timeseries: {entity} → {pg_result['table_name']}.{pg_result['metric_col']}"
+                f" = {pg_result['value']} {pg_result['unit']} (ts={pg_result['timestamp'][:19]})"
+            )
+            return {
+                "demoData": {
+                    "label": pg_result["label"],
+                    "value": str(pg_result["value"]),
+                    "unit": pg_result["unit"],
+                    "state": "normal",
+                    "_data_source": f"pg_timeseries:{pg_result['table_name']}",
+                    "_table": pg_result["table_name"],
+                }
+            }
+
+        # ── FALLBACK: Django SQLite metadata tables ──
         from django.db import connection
 
-        # Normalize spoken numbers to digits for matching
         number_words = {
             "one": "1", "two": "2", "three": "3", "four": "4", "five": "5",
             "six": "6", "seven": "7", "eight": "8", "nine": "9", "ten": "10",
-            "eleven": "11", "twelve": "12", "thirteen": "13", "fourteen": "14", "fifteen": "15",
         }
         normalized = entity.lower().strip()
         for word, digit in number_words.items():
             normalized = re.sub(rf'\b{word}\b', digit, normalized)
 
-        # Extract the trailing number if present (e.g., "transformer 1" -> "1")
         num_match = re.search(r'(\d+)\s*$', normalized)
         entity_number = num_match.group(1) if num_match else ""
 
-        # Map metric to equipment table columns
         equipment_tables = [
             {
                 "table": "industrial_transformer",
@@ -820,31 +846,17 @@ class SchemaDataCollector:
         ]
 
         for tbl in equipment_tables:
-            # Check if entity mentions this equipment type
             if not any(kw in normalized for kw in tbl["keywords"]):
                 continue
-
             col_info = tbl["columns"].get(metric, tbl["default_col"])
             col_name, unit = col_info
-
             try:
                 with connection.cursor() as c:
-                    # Build match patterns from most specific to least
                     like_patterns = []
                     if entity_number:
-                        # Exact number at end: "% 1" matches "Main Transformer 1" but not "11"
                         like_patterns.append(f"% {entity_number}")
-                        # Also try "% {N}" with trailing space variants
                         like_patterns.append(f"%{entity_number}")
-                    # Full normalized name match
                     like_patterns.append(f"%{normalized}%")
-
-                    # Determine if user specified a subtype (e.g., "dry type", "oil")
-                    # If not, prefer "Main" prefixed names for transformers
-                    has_subtype = any(
-                        st in normalized
-                        for st in ("dry type", "dry-type", "oil", "cast resin", "pad mount")
-                    )
 
                     for pattern in like_patterns:
                         c.execute(f"""
@@ -857,30 +869,17 @@ class SchemaDataCollector:
                             LIMIT 1
                         """, [pattern])
                         row = c.fetchone()
-
-                        # If user specified a subtype, re-query with subtype filter
-                        if has_subtype and entity_number:
-                            subtype_pattern = f"%{normalized}%"
-                            c.execute(f"""
-                                SELECT name, {col_name}, health_score, status
-                                FROM {tbl['table']}
-                                WHERE LOWER(name) LIKE %s
-                                ORDER BY name LIMIT 1
-                            """, [subtype_pattern])
-                            sub_row = c.fetchone()
-                            if sub_row:
-                                row = sub_row
-
                         if row:
                             val = round(float(row[1]), 1) if row[1] is not None else "N/A"
                             state = "warning" if row[3] in ("fault", "offline", "stopped") else "normal"
-                            logger.info(f"Equipment SQL: found {row[0]} in {tbl['table']} ({col_name}={val})")
+                            logger.info(f"SQLite fallback: found {row[0]} in {tbl['table']} ({col_name}={val})")
                             return {
                                 "demoData": {
                                     "label": row[0],
                                     "value": str(val),
                                     "unit": unit,
                                     "state": state,
+                                    "_data_source": f"sqlite:{tbl['table']}",
                                 }
                             }
             except Exception as e:
@@ -930,43 +929,97 @@ class SchemaDataCollector:
         return {"demoData": alerts}
 
     def _collect_comparison(self, query: str, entities: list, metric: str, collections: list) -> dict:
-        """Collect comparison data for two entities.
+        """Collect comparison data for two entities from PostgreSQL timeseries.
 
-        For equipment entities (transformers, generators), uses direct SQL
-        to get accurate power/load data instead of relying on vector search.
+        PRIMARY: Resolves entities to PG tables and queries real timeseries data.
+        FALLBACK: Django SQLite metadata → ChromaDB vector search.
         """
-        # Need at least 2 entities
         entity_a = entities[0] if len(entities) > 0 else ""
         entity_b = entities[1] if len(entities) > 1 else ""
 
-        # Map metric aliases
-        metric_aliases = {
-            "power": "power_kw", "load": "power_kw", "consumption": "power_kw",
-            "voltage": "voltage_avg", "pf": "power_factor",
-        }
-        resolved_metric = metric_aliases.get((metric or "").lower().strip(), metric)
+        # ── PRIMARY: PostgreSQL timeseries comparison ──
+        resolved_a = resolve_entity_to_table(entity_a) if entity_a else None
+        resolved_b = resolve_entity_to_table(entity_b) if entity_b else None
 
-        # Try equipment tables first for known equipment types
-        query_lower = query.lower()
-        is_equipment = any(kw in query_lower or kw in entity_a.lower() or kw in entity_b.lower()
-                           for kw in self._EQUIPMENT_KEYWORDS)
-        if is_equipment:
-            # Default to power_kw for equipment queries when metric is empty
-            if not resolved_metric or resolved_metric not in ("power_kw", "voltage_avg", "power_factor", "frequency"):
-                resolved_metric = "power_kw"
-            equip_a = self._try_equipment_power_data(entity_a or query, resolved_metric) if entity_a else None
-            equip_b = self._try_equipment_power_data(entity_b or query, resolved_metric) if entity_b else None
+        if resolved_a and resolved_b:
+            table_a, prefix_a, default_metric_a, default_unit_a = resolved_a
+            table_b, prefix_b, default_metric_b, default_unit_b = resolved_b
 
-            if equip_a and equip_b:
-                da = equip_a.get("demoData", {})
-                db = equip_b.get("demoData", {})
-                val_a = da.get("value", "N/A")
-                val_b = db.get("value", "N/A")
-                unit = da.get("unit", db.get("unit", ""))
+            # Resolve the metric column for both (use prefix_a for metric resolution)
+            metric_col_a, unit_a = resolve_metric_column(prefix_a, metric) if metric else (default_metric_a, default_unit_a)
+            metric_col_b, unit_b = resolve_metric_column(prefix_b, metric) if metric else (default_metric_b, default_unit_b)
+
+            # Query 24h stats for both
+            stats_a = self._query_pg_stats(table_a, metric_col_a, hours=24)
+            stats_b = self._query_pg_stats(table_b, metric_col_b, hours=24)
+
+            if stats_a and stats_b:
+                val_a = stats_a["latest"] if stats_a["latest"] is not None else stats_a["avg"]
+                val_b = stats_b["latest"] if stats_b["latest"] is not None else stats_b["avg"]
+
                 try:
                     delta = float(val_a) - float(val_b)
                     delta_pct = (delta / float(val_b) * 100) if float(val_b) != 0 else 0
-                except (ValueError, TypeError):
+                except (ValueError, TypeError, ZeroDivisionError):
+                    delta, delta_pct = 0, 0
+
+                # Build labels
+                prefix_labels = {
+                    "trf": "Transformer", "dg": "DG Set", "ups": "UPS",
+                    "chiller": "Chiller", "ahu": "AHU", "ct": "Cooling Tower",
+                    "pump": "Pump", "compressor": "Compressor", "motor": "Motor",
+                    "em": "Energy Meter",
+                }
+                num_a = re.search(r'(\d+)$', table_a)
+                num_b = re.search(r'(\d+)$', table_b)
+                label_a = f"{prefix_labels.get(prefix_a, prefix_a.upper())} {int(num_a.group(1))}" if num_a else table_a
+                label_b = f"{prefix_labels.get(prefix_b, prefix_b.upper())} {int(num_b.group(1))}" if num_b else table_b
+
+                metric_label = metric_col_a.replace("_", " ").replace("kw", "kW").title() if not metric else metric.replace("_", " ").title()
+
+                logger.info(
+                    f"PG Comparison: {table_a}={val_a} vs {table_b}={val_b} "
+                    f"({metric_col_a}, delta={delta:.2f})"
+                )
+
+                return {
+                    "demoData": {
+                        "label": metric_label,
+                        "unit": unit_a,
+                        "labelA": label_a,
+                        "valueA": str(val_a),
+                        "labelB": label_b,
+                        "valueB": str(val_b),
+                        "delta": round(delta, 2),
+                        "deltaPct": round(delta_pct, 1),
+                        "avgA": stats_a["avg"],
+                        "avgB": stats_b["avg"],
+                        "minA": stats_a["min"],
+                        "minB": stats_b["min"],
+                        "maxA": stats_a["max"],
+                        "maxB": stats_b["max"],
+                        "_data_source": f"pg_timeseries:{table_a},{table_b}",
+                    }
+                }
+
+        # ── FALLBACK: _try_equipment_power_data (tries PG first, then SQLite) ──
+        query_lower = query.lower()
+        is_equipment = any(kw in query_lower or kw in entity_a.lower() or kw in entity_b.lower()
+                           for kw in self._EQUIPMENT_KEYWORDS)
+        if is_equipment or resolved_a or resolved_b:
+            equip_a = self._try_equipment_power_data(entity_a or query, metric) if entity_a else None
+            equip_b = self._try_equipment_power_data(entity_b or query, metric) if entity_b else None
+
+            if equip_a and equip_b:
+                da = equip_a.get("demoData", {})
+                db_data = equip_b.get("demoData", {})
+                val_a = da.get("value", "N/A")
+                val_b = db_data.get("value", "N/A")
+                unit = da.get("unit", db_data.get("unit", ""))
+                try:
+                    delta = float(val_a) - float(val_b)
+                    delta_pct = (delta / float(val_b) * 100) if float(val_b) != 0 else 0
+                except (ValueError, TypeError, ZeroDivisionError):
                     delta, delta_pct = 0, 0
                 return {
                     "demoData": {
@@ -974,14 +1027,14 @@ class SchemaDataCollector:
                         "unit": unit,
                         "labelA": da.get("label", entity_a),
                         "valueA": val_a,
-                        "labelB": db.get("label", entity_b),
+                        "labelB": db_data.get("label", entity_b),
                         "valueB": val_b,
                         "delta": round(delta, 2),
                         "deltaPct": round(delta_pct, 1),
                     }
                 }
 
-        # Fallback: vector search
+        # ── LAST RESORT: vector search ──
         vs = self.pipeline.vector_store
         coll = collections[0] if collections else EQUIPMENT_COLLECTION
 
@@ -991,13 +1044,11 @@ class SchemaDataCollector:
         val_a, unit_a, _ = self._extract_metric_from_doc(result_a[0], metric) if result_a else ("N/A", "", "normal")
         val_b, unit_b, _ = self._extract_metric_from_doc(result_b[0], metric) if result_b else ("N/A", "", "normal")
 
-        # Calculate delta
         try:
             delta = float(val_a) - float(val_b)
             delta_pct = (delta / float(val_b) * 100) if float(val_b) != 0 else 0
-        except (ValueError, TypeError):
-            delta = 0
-            delta_pct = 0
+        except (ValueError, TypeError, ZeroDivisionError):
+            delta, delta_pct = 0, 0
 
         label_a = result_a[0].metadata.get("name", entity_a) if result_a else entity_a
         label_b = result_b[0].metadata.get("name", entity_b) if result_b else entity_b
@@ -1016,10 +1067,40 @@ class SchemaDataCollector:
         }
 
     def _collect_time_series(self, query: str, entities: list, metric: str) -> dict:
-        """Collect time series data — first try SQL energy readings, then fallback to vector."""
+        """Collect time series data — PostgreSQL timeseries first, then energy_readings, then synthetic."""
         entity = entities[0] if entities else None
 
-        # Try energy SQL for time series (actual readings with timestamps)
+        # ── PRIMARY: PostgreSQL timeseries (command_center_data) ──
+        if entity:
+            resolved = resolve_entity_to_table(entity)
+            if resolved:
+                table_name, prefix, default_metric, default_unit = resolved
+                metric_col, unit = resolve_metric_column(prefix, metric) if metric else (default_metric, default_unit)
+                ts_data = self._query_pg_timeseries(table_name, metric_col, hours=24, interval='1 hour')
+                if ts_data:
+                    num_match = re.search(r'(\d+)$', table_name)
+                    num = int(num_match.group(1)) if num_match else 0
+                    prefix_labels = {
+                        "trf": "Transformer", "dg": "DG Set", "ups": "UPS",
+                        "chiller": "Chiller", "ahu": "AHU", "ct": "Cooling Tower",
+                        "pump": "Pump", "compressor": "Compressor", "motor": "Motor",
+                        "em": "Energy Meter",
+                    }
+                    label = f"{prefix_labels.get(prefix, prefix.upper())} {num}"
+                    logger.info(f"PG TimeSeries: {table_name}.{metric_col} → {len(ts_data)} points")
+                    return {
+                        "demoData": {
+                            "label": label,
+                            "unit": unit,
+                            "timeSeries": ts_data,
+                            "timeRange": "last_24h",
+                            "_data_source": f"pg_timeseries:{table_name}",
+                            "_table": table_name,
+                            "_metric": metric_col,
+                        }
+                    }
+
+        # ── FALLBACK 1: energy_readings SQL ──
         energy_data = self.pipeline.query_energy_sql(equipment_id=entity)
         if energy_data:
             points = sorted(energy_data, key=lambda p: p.get("timestamp", ""))
@@ -1037,21 +1118,19 @@ class SchemaDataCollector:
                 }
             }
 
-        # Fallback: search equipment docs for the entity and generate synthetic time series
+        # ── FALLBACK 2: synthetic from vector metadata ──
         vs = self.pipeline.vector_store
         results = vs.search(EQUIPMENT_COLLECTION, f"{entity or ''} {metric}".strip() or query, n_results=1)
         meta = results[0].metadata if results else {}
 
-        # Generate 24h of synthetic data from base value (health_score or power_kw)
         base_value = float(meta.get("health_score", meta.get("power_kw", 50)))
         unit = meta.get("unit", "kW" if "power" in (metric or "").lower() else "%")
         label = meta.get("name", entity or query[:30])
 
-        from datetime import datetime, timedelta
         import random
         now = datetime.now()
         time_series = []
-        for i in range(48):  # 30-min intervals over 24h
+        for i in range(48):
             t = now - timedelta(hours=24) + timedelta(minutes=i * 30)
             noise = random.uniform(-base_value * 0.08, base_value * 0.08)
             time_series.append({
@@ -1065,7 +1144,7 @@ class SchemaDataCollector:
                 "unit": unit,
                 "timeSeries": time_series,
                 "timeRange": "last_24h",
-                "_synthetic": True,  # GROUNDING AUDIT: marks data as synthetically generated
+                "_synthetic": True,
                 "_data_source": "synthetic_from_vector_metadata",
             }
         }
@@ -1379,15 +1458,16 @@ class SchemaDataCollector:
         }
 
     def _collect_device_detail(self, query: str, entities: list) -> dict:
-        """Collect detailed info for a single device (edgedevicepanel)."""
+        """Collect detailed info for a single device (edgedevicepanel).
+
+        Enriches ChromaDB metadata with live PostgreSQL timeseries readings.
+        """
         vs = self.pipeline.vector_store
         entity = entities[0] if entities else ""
 
-        # Equipment info
+        # Equipment info from ChromaDB
         eq_results = vs.search(EQUIPMENT_COLLECTION, entity or query, n_results=1)
-        # Related alerts
         alert_results = vs.search(ALERTS_COLLECTION, entity or query, n_results=3)
-        # Related maintenance
         maint_results = vs.search(MAINTENANCE_COLLECTION, entity or query, n_results=3)
 
         device = {}
@@ -1403,9 +1483,35 @@ class SchemaDataCollector:
                 "criticality": meta.get("criticality", ""),
             }
 
-        # Extract numerical metadata as sensor readings
+        # ── PostgreSQL timeseries live readings ──
         readings = []
-        if eq_results:
+        resolved = resolve_entity_to_table(entity)
+        if resolved:
+            table_name, prefix, default_metric, default_unit = resolved
+            # Get key metrics for this equipment type
+            metric_map = EQUIPMENT_METRIC_MAP.get(prefix, {})
+            metric_cols = [col for key, (col, unit) in metric_map.items() if key != "default"][:8]
+            if metric_cols:
+                live_data = self._query_pg_multi_metric_latest(table_name, metric_cols)
+                if live_data:
+                    device["_data_source"] = f"pg_timeseries:{table_name}"
+                    for col, val in live_data.items():
+                        if val is not None:
+                            # Find unit from metric map
+                            unit = ""
+                            for key, (mc, u) in metric_map.items():
+                                if mc == col:
+                                    unit = u
+                                    break
+                            readings.append({
+                                "parameter": col.replace("_", " ").title(),
+                                "value": val,
+                                "unit": unit,
+                            })
+                    logger.info(f"PG DeviceDetail: {table_name} → {len(readings)} live readings")
+
+        # Fallback to ChromaDB metadata readings if PG didn't work
+        if not readings and eq_results:
             meta = eq_results[0].metadata
             reading_keys = {
                 "power_kw": "kW", "voltage": "V", "current": "A",

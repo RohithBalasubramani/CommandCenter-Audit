@@ -1,9 +1,13 @@
 """
-Data Pre-Fetcher — fast parallel ChromaDB scan before widget selection.
+Data Pre-Fetcher — fast parallel ChromaDB + PostgreSQL scan before widget selection.
 
 Gives Stage 3 (widget selector) a summary of what data actually exists
 for the entities mentioned in the user's query, so the LLM can make
 informed decisions about which widgets to build.
+
+Data sources:
+1. ChromaDB vector store (equipment metadata, alerts, maintenance)
+2. PostgreSQL command_center_data (357 equipment tables, 564M rows of timeseries)
 """
 
 import logging
@@ -43,8 +47,8 @@ class DataPrefetcher:
 
     def prefetch(self, intent) -> str:
         """
-        Search ChromaDB collections for mentioned entities and return a
-        compact text summary suitable for prompt injection (~300-500 tokens).
+        Search ChromaDB collections + PostgreSQL timeseries for mentioned entities
+        and return a compact text summary suitable for prompt injection (~300-500 tokens).
         """
         entities = getattr(intent, "entities", {}) or {}
         devices = entities.get("devices", [])
@@ -56,13 +60,17 @@ class DataPrefetcher:
         results: dict[str, dict] = {}
         vs = self.pipeline.vector_store
 
-        # Parallel search: one task per (device × collection)
+        # Parallel search: one task per (device × collection) + PostgreSQL timeseries
         tasks = []
-        with ThreadPoolExecutor(max_workers=6) as pool:
+        pg_tasks = []
+        with ThreadPoolExecutor(max_workers=8) as pool:
             for device in devices[:4]:  # cap at 4 entities
                 for coll_name, coll_info in _PROBE_COLLECTIONS.items():
                     fut = pool.submit(self._search_one, vs, coll_name, device)
                     tasks.append((fut, device, coll_name, coll_info))
+                # Also probe PostgreSQL timeseries
+                pg_fut = pool.submit(self._probe_pg_timeseries, device)
+                pg_tasks.append((pg_fut, device))
 
             for fut, device, coll_name, coll_info in tasks:
                 try:
@@ -74,6 +82,17 @@ class DataPrefetcher:
                     )
                 except Exception as e:
                     logger.debug(f"Pre-fetch failed for {device}/{coll_name}: {e}")
+
+            # Collect PostgreSQL timeseries results
+            for pg_fut, device in pg_tasks:
+                try:
+                    pg_summary = pg_fut.result(timeout=2)
+                    if pg_summary:
+                        if device not in results:
+                            results[device] = {}
+                        results[device]["Timeseries"] = pg_summary
+                except Exception as e:
+                    logger.debug(f"PG pre-fetch failed for {device}: {e}")
 
         return self._format(results)
 
